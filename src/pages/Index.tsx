@@ -21,7 +21,7 @@ const PROJECTS = [
 ];
 
 const NEWS = [
-  { id: 1, date: "18 апреля 2026", category: "Компания", title: "СтройГрупп вошла в топ-10 строительных компаний России", text: "По итогам ежегодного рейтинга отраслевого портала, компания заняла 7-е место среди крупнейших строительных организаций страны." },
+  { id: 1, date: "18 апреля 2026", category: "Компания", title: "АО УРСТ вошло в топ-10 строительных компаний России", text: "По итогам ежегодного рейтинга отраслевого портала, компания заняла 7-е место среди крупнейших строительных организаций страны." },
   { id: 2, date: "10 апреля 2026", category: "Проекты", title: "Начало строительства нового жилого квартала на севере города", text: "На этой неделе официально стартовал один из крупнейших жилых проектов этого года — квартал «Рассвет» на 2 400 квартир." },
   { id: 3, date: "2 апреля 2026", category: "Тендеры", title: "Победа в государственном тендере на строительство школы", text: "Наша компания одержала победу в конкурсе на возведение образовательного комплекса. Стоимость контракта — 890 млн рублей." },
   { id: 4, date: "25 марта 2026", category: "Компания", title: "Открытие нового регионального офиса в Санкт-Петербурге", text: "В рамках стратегии расширения географии присутствия открылся наш офис в Северной столице." },
@@ -36,7 +36,7 @@ const TENDERS = [
 ];
 
 const DOCS = [
-  { id: 1, name: "Устав ООО «СтройГрупп»", type: "PDF", size: "2.4 МБ", category: "Учредительные", date: "01.01.2020" },
+  { id: 1, name: "Устав АО «УРСТ»", type: "PDF", size: "2.4 МБ", category: "Учредительные", date: "01.01.2020" },
   { id: 2, name: "Лицензия на строительную деятельность", type: "PDF", size: "1.1 МБ", category: "Лицензии", date: "15.03.2023" },
   { id: 3, name: "Сертификат ISO 9001:2015", type: "PDF", size: "0.8 МБ", category: "Сертификаты", date: "10.06.2024" },
   { id: 4, name: "Допуск СРО на особо опасные объекты", type: "PDF", size: "1.6 МБ", category: "СРО", date: "22.09.2023" },
@@ -53,9 +53,9 @@ function LoginModal({ onClose, onLogin }: { onClose: () => void; onLogin: (user:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (email === "admin@stroygroup.ru" && password === "admin123") {
+    if (email === "admin@ao-urst.ru" && password === "admin123") {
       onLogin({ name: "Александр Петров", role: "admin", email });
-    } else if (email === "user@stroygroup.ru" && password === "user123") {
+    } else if (email === "user@ao-urst.ru" && password === "user123") {
       onLogin({ name: "Мария Иванова", role: "user", email });
     } else {
       setError("Неверный логин или пароль");
@@ -72,7 +72,7 @@ function LoginModal({ onClose, onLogin }: { onClose: () => void; onLogin: (user:
         <div style={{ background: "#2C3E50" }} className="px-8 py-6 flex justify-between items-center">
           <div>
             <div className="text-white font-montserrat font-bold text-lg">Вход в систему</div>
-            <div className="text-gray-300 text-sm mt-0.5">СтройГрупп</div>
+            <div className="text-gray-300 text-sm mt-0.5">АО УРСТ</div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <Icon name="X" size={20} />
@@ -82,8 +82,8 @@ function LoginModal({ onClose, onLogin }: { onClose: () => void; onLogin: (user:
         <div style={{ background: "rgba(230,126,34,0.08)", borderLeft: "3px solid #E67E22" }} className="px-6 py-3 mx-8 mt-6 text-sm">
           <div className="font-semibold mb-1 font-montserrat" style={{ color: "#E67E22" }}>Демо-доступ</div>
           <div className="text-gray-600 text-xs leading-relaxed">
-            Администратор: admin@stroygroup.ru / admin123<br />
-            Пользователь: user@stroygroup.ru / user123
+            Администратор: admin@ao-urst.ru / admin123<br />
+            Пользователь: user@ao-urst.ru / user123
           </div>
         </div>
 
@@ -146,7 +146,7 @@ function Header({ activeSection, setSection, user, onLoginClick, onLogout, mobil
             <Icon name="Building2" size={20} className="text-white" />
           </div>
           <div>
-            <div className="text-white font-montserrat font-black text-lg leading-none tracking-wide">СТРОЙГРУПП</div>
+            <div className="text-white font-montserrat font-black text-lg leading-none tracking-wide">АО УРСТ</div>
             <div className="text-gray-400 text-xs leading-none font-montserrat tracking-widest">СТРОИТЕЛЬНАЯ КОМПАНИЯ</div>
           </div>
         </button>
@@ -351,7 +351,7 @@ function AboutSection() {
         <div className="max-w-7xl mx-auto">
           <div className="tag-orange mb-4 inline-block">О нас</div>
           <h1 className="font-montserrat font-black text-white text-4xl mb-4">О компании</h1>
-          <p className="text-gray-300 max-w-xl leading-relaxed">ООО «СтройГрупп» — одна из ведущих строительных компаний страны с 25-летней историей.</p>
+          <p className="text-gray-300 max-w-xl leading-relaxed">АО «УРСТ» — одна из ведущих строительных компаний страны с 25-летней историей.</p>
         </div>
       </div>
 
@@ -524,7 +524,7 @@ function NewsSection() {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2 text-gray-300"><Icon name="User" size={14} /> Ксения Белова</div>
                   <div className="flex items-center gap-2 text-gray-300"><Icon name="Phone" size={14} /> +7 (495) 123-45-67</div>
-                  <div className="flex items-center gap-2 text-gray-300"><Icon name="Mail" size={14} /> press@stroygroup.ru</div>
+                  <div className="flex items-center gap-2 text-gray-300"><Icon name="Mail" size={14} /> press@ao-urst.ru</div>
                 </div>
               </div>
             </div>
@@ -665,9 +665,9 @@ function DocsSection({ user }: { user: User | null }) {
 // ─── Contacts ─────────────────────────────────────────────────────────────────
 function ContactsSection() {
   const offices = [
-    { city: "Москва (Главный офис)", address: "ул. Строителей, д. 18, стр. 2", phone: "+7 (495) 123-45-67", email: "moscow@stroygroup.ru" },
-    { city: "Санкт-Петербург", address: "Невский пр., д. 112, оф. 304", phone: "+7 (812) 234-56-78", email: "spb@stroygroup.ru" },
-    { city: "Екатеринбург", address: "ул. Ленина, д. 52, оф. 201", phone: "+7 (343) 345-67-89", email: "ekb@stroygroup.ru" },
+    { city: "Москва (Главный офис)", address: "ул. Строителей, д. 18, стр. 2", phone: "+7 (495) 123-45-67", email: "moscow@ao-urst.ru" },
+    { city: "Санкт-Петербург", address: "Невский пр., д. 112, оф. 304", phone: "+7 (812) 234-56-78", email: "spb@ao-urst.ru" },
+    { city: "Екатеринбург", address: "ул. Ленина, д. 52, оф. 201", phone: "+7 (343) 345-67-89", email: "ekb@ao-urst.ru" },
   ];
 
   return (
@@ -758,7 +758,7 @@ function Footer({ setSection }: { setSection: (s: Section) => void }) {
               <Icon name="Building2" size={16} className="text-white" />
             </div>
             <div>
-              <div className="font-montserrat font-black text-white text-sm">СТРОЙГРУПП</div>
+              <div className="font-montserrat font-black text-white text-sm">АО УРСТ</div>
               <div className="text-gray-500 text-xs">с 1999 года</div>
             </div>
           </div>
@@ -782,14 +782,14 @@ function Footer({ setSection }: { setSection: (s: Section) => void }) {
           <div className="font-montserrat font-bold text-xs text-gray-300 uppercase tracking-widest mb-4">Контакты</div>
           <div className="space-y-2 text-xs text-gray-400">
             <div className="flex items-center gap-2"><Icon name="Phone" size={11} /> +7 (800) 555-35-35</div>
-            <div className="flex items-center gap-2"><Icon name="Mail" size={11} /> info@stroygroup.ru</div>
+            <div className="flex items-center gap-2"><Icon name="Mail" size={11} /> info@ao-urst.ru</div>
             <div className="flex items-center gap-2"><Icon name="MapPin" size={11} /> Москва, ул. Строителей, 18</div>
           </div>
         </div>
       </div>
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} className="py-4 px-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-xs text-gray-500">
-          <span>© 2026 ООО «СтройГрупп». Все права защищены.</span>
+          <span>© 2026 АО «УРСТ». Все права защищены.</span>
           <span>ИНН 7701234567 · ОГРН 1027700123456</span>
         </div>
       </div>
