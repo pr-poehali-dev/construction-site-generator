@@ -206,7 +206,7 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob }: {
 // ─── Page Header (inner pages) ────────────────────────────────────────────────
 function PageHeader({ label, title, sub }: { label: string; title: string; sub: string }) {
   return (
-    <div style={{ background: INK, paddingTop: 90 }} className="pb-14 px-4 mt-0">
+    <div style={{ background: INK, paddingTop: 140 }} className="pb-14 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="chip mb-4">{label}</div>
         <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "clamp(2rem,4vw,3rem)", color: "#fff", letterSpacing: "-.03em", lineHeight: 1.1 }} className="mb-3">{title}</h1>
