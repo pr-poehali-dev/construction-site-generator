@@ -136,13 +136,10 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob }: {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <button onClick={() => go("home")} className="flex items-center gap-3 group">
-          <div style={{ background: B, width: 34, height: 34, borderRadius: 8, boxShadow: "0 4px 12px rgba(0,102,255,.4)" }}
+          <div style={{ borderRadius: 8, boxShadow: "0 4px 12px rgba(0,102,255,.4)", overflow: "hidden", background: "transparent" }}
             className="flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
-            <Icon name="Building2" size={18} className="text-white" />
-          </div>
-          <div className="leading-tight">
-            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: ".95rem", color: "#fff", letterSpacing: "-.01em" }}>АО УРСТ</div>
-            <div style={{ fontSize: ".6rem", color: "rgba(255,255,255,.45)", letterSpacing: ".1em", fontFamily: "'Inter',sans-serif" }}>СТРОИТЕЛЬНАЯ КОМПАНИЯ</div>
+            <img src="https://cdn.poehali.dev/projects/232d353a-884c-46d3-ba1a-b2a0e421060f/bucket/f7e42cde-bc9f-49ef-9ea5-01f05ae05665.png"
+              alt="АО УРСТ" style={{ height: 34, width: "auto", display: "block" }} />
           </div>
         </button>
 
@@ -234,21 +231,33 @@ function HomeSection({ go }: { go: (s: Section) => void }) {
         <div className="hero-grid" />
 
         <div className="max-w-7xl mx-auto px-6 pb-20 w-full relative z-10">
-          {/* Big headline */}
-          <div className="max-w-3xl mb-16">
-            <div className="chip mb-6 animate-fade-up" style={{ opacity: 0 }}>13+ лет профессиональной деятельности</div>
-            <h1 className="animate-fade-up d-100 text-white"
-              style={{ opacity: 0, fontFamily: "'Inter',sans-serif", fontWeight: 900, fontSize: "clamp(2.6rem,6vw,5rem)", lineHeight: 1.0, letterSpacing: "-.04em" }}>
-              Строим<br />
-              <span style={{ color: "#3385FF" }}>инфраструктуру</span><br />
-              будущего
-            </h1>
-            <p className="animate-fade-up d-200 mt-6 text-base leading-relaxed" style={{ opacity: 0, color: "rgba(255,255,255,.55)", maxWidth: 520 }}>
-              Полный цикл строительства — от проектирования до сдачи объекта. Государственные и коммерческие заказчики.
-            </p>
-            <div className="flex gap-3 flex-wrap mt-8 animate-fade-up d-300" style={{ opacity: 0 }}>
-              <button onClick={() => go("projects")} className="btn-primary">Наши проекты <Icon name="ArrowRight" size={14} /></button>
-              <button onClick={() => go("contacts")} className="btn-ghost">Связаться с нами</button>
+          {/* Hero grid: text left, image right */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
+            <div>
+              <div className="chip mb-6 animate-fade-up" style={{ opacity: 0 }}>13+ лет профессиональной деятельности</div>
+              <h1 className="animate-fade-up d-100 text-white"
+                style={{ opacity: 0, fontFamily: "'Inter',sans-serif", fontWeight: 900, fontSize: "clamp(2.6rem,6vw,5rem)", lineHeight: 1.0, letterSpacing: "-.04em" }}>
+                Строим<br />
+                <span style={{ color: "#3385FF" }}>инфраструктуру</span><br />
+                будущего
+              </h1>
+              <p className="animate-fade-up d-200 mt-6 text-base leading-relaxed" style={{ opacity: 0, color: "rgba(255,255,255,.55)", maxWidth: 520 }}>
+                Полный цикл строительства — от проектирования до сдачи объекта. Государственные и коммерческие заказчики.
+              </p>
+              <div className="flex gap-3 flex-wrap mt-8 animate-fade-up d-300" style={{ opacity: 0 }}>
+                <button onClick={() => go("projects")} className="btn-primary">Наши проекты <Icon name="ArrowRight" size={14} /></button>
+                <button onClick={() => go("contacts")} className="btn-ghost">Связаться с нами</button>
+              </div>
+            </div>
+            {/* Hero image */}
+            <div className="hidden lg:flex items-center justify-center animate-fade-up d-200" style={{ opacity: 0 }}>
+              <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,.5)", border: "1px solid rgba(255,255,255,.08)" }}>
+                <img
+                  src="https://cdn.poehali.dev/projects/232d353a-884c-46d3-ba1a-b2a0e421060f/files/5dcc861c-9695-40f3-a9b3-c963da3c8aa5.jpg"
+                  alt="Строительство"
+                  style={{ width: "100%", height: 420, objectFit: "cover", display: "block" }}
+                />
+              </div>
             </div>
           </div>
 
@@ -803,9 +812,19 @@ function Footer({ go }: { go: (s: Section) => void }) {
           </div>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid rgba(255,255,255,.04)" }} className="py-4 px-6">
-        <div className="max-w-7xl mx-auto text-center" style={{ fontSize: ".75rem", color: "rgba(255,255,255,.2)", fontFamily: "'Inter',sans-serif" }}>
-          © 2026 АО «УРСТ». Все права защищены.
+      <div style={{ borderTop: "1px solid rgba(255,255,255,.06)" }} className="py-5 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div style={{ fontSize: ".75rem", color: "rgba(255,255,255,.2)", fontFamily: "'Inter',sans-serif" }}>
+            © 2026 АО «УРСТ». Все права защищены.
+          </div>
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: ".7rem", color: "rgba(255,255,255,.25)", fontFamily: "'Inter',sans-serif" }}>Входит в группу</span>
+            <img
+              src="https://cdn.poehali.dev/projects/232d353a-884c-46d3-ba1a-b2a0e421060f/bucket/13ef7463-bb6a-411e-a582-2df6633a7c73.png"
+              alt="Мосинжпроект"
+              style={{ height: 22, width: "auto", opacity: 0.55, filter: "brightness(0) invert(1)" }}
+            />
+          </div>
         </div>
       </div>
     </footer>
