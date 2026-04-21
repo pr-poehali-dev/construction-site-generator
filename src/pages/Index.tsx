@@ -852,15 +852,6 @@ function ContactsSection({ user, onLogin }: { user: User | null; onLogin: () => 
               ))}
             </div>
 
-            {/* Logo image */}
-            <div className="flex justify-center mb-6">
-              <img
-                src="https://cdn.poehali.dev/projects/232d353a-884c-46d3-ba1a-b2a0e421060f/bucket/1b667fb6-31e5-453c-b2fd-55ea9701ab44.jpg"
-                alt="АО УРСТ"
-                style={{ height: 80, width: "auto", objectFit: "contain" }}
-              />
-            </div>
-
             {/* Реквизиты */}
             <div className="rounded-2xl p-6" style={{ border: "1px solid #E4E8F0" }}>
               <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 14 }}>Реквизиты</h3>
@@ -907,7 +898,7 @@ function ContactsSection({ user, onLogin }: { user: User | null; onLogin: () => 
           <h2 className="section-title mb-7">На карте</h2>
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #E4E8F0", height: 400 }}>
             <iframe
-              src="https://yandex.ru/map-widget/v1/?ll=37.543%2C55.766&z=13&pt=37.5596%2C55.7606%2Cpm2bll%2C%D0%93%D0%BB%D0%B0%D0%B2%D0%BD%D1%8B%D0%B9+%D0%BE%D1%84%D0%B8%D1%81~37.526375%2C55.772451%2Cpm2bll%2C%D0%9E%D1%84%D0%B8%D1%81+2&l=map"
+              src="https://yandex.ru/map-widget/v1/?ll=37.543%2C55.766&z=14&pt=37.559600%2C55.760600%2Cpm2rdl1~37.526375%2C55.772451%2Cpm2rdl2&l=map"
               width="100%"
               height="100%"
               style={{ border: 0, display: "block" }}
