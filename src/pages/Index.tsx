@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 
-type Section = "home" | "about" | "projects" | "news" | "tenders" | "docs" | "contacts" | "cabinet";
+type Section = "home" | "about" | "projects" | "news" | "tenders" | "docs" | "contacts" | "cabinet" | "search";
 type UserRole = "superadmin" | "contentadmin" | "user" | null;
 interface User { name: string; role: UserRole; email: string; phone?: string; company?: string; }
 
@@ -197,12 +197,15 @@ function LoginModal({ onClose, onLogin }: { onClose: () => void; onLogin: (u: Us
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
-function Header({ active, go, user, onLogin, onLogout, mob, setMob, cfg }: {
+function Header({ active, go, user, onLogin, onLogout, mob, setMob, cfg, onSearch }: {
   active: Section; go: (s: Section) => void; user: User | null;
   onLogin: () => void; onLogout: () => void; mob: boolean; setMob: (v: boolean) => void;
-  cfg: SiteConfig;
+  cfg: SiteConfig; onSearch: (q: string) => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
+  const [searchQ, setSearchQ] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", h);
@@ -273,8 +276,38 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob, cfg }: {
           </nav>
         )}
 
-        {/* Auth */}
-        <div className="flex items-center gap-3">
+        {/* Search + Auth */}
+        <div className="flex items-center gap-2">
+          {/* Поисковая строка — только для гостей и обычных пользователей */}
+          {(!user || user.role === "user") && (
+            <div className="relative hidden md:flex items-center">
+              {searchOpen ? (
+                <form onSubmit={e => { e.preventDefault(); if (searchQ.trim()) { onSearch(searchQ.trim()); setSearchOpen(false); } }}
+                  className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    value={searchQ}
+                    onChange={e => setSearchQ(e.target.value)}
+                    placeholder="Поиск по сайту..."
+                    className="rounded-xl px-3 py-1.5 text-sm outline-none"
+                    style={{ background: "rgba(255,255,255,.12)", color: "#fff", border: "1px solid rgba(255,255,255,.2)", width: 220, fontFamily: "'Inter',sans-serif" }}
+                    onKeyDown={e => e.key === "Escape" && setSearchOpen(false)}
+                  />
+                  <button type="submit" className="p-1.5 rounded-lg hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.7)" }}>
+                    <Icon name="Search" size={16} />
+                  </button>
+                  <button type="button" onClick={() => { setSearchOpen(false); setSearchQ(""); }} className="p-1.5 rounded-lg hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.5)" }}>
+                    <Icon name="X" size={14} />
+                  </button>
+                </form>
+              ) : (
+                <button onClick={() => setSearchOpen(true)} className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.6)" }} title="Поиск">
+                  <Icon name="Search" size={18} />
+                </button>
+              )}
+            </div>
+          )}
+
           {user ? (
             <div className="flex items-center gap-2">
               <button
@@ -304,6 +337,16 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob, cfg }: {
       {/* Mobile menu */}
       {mob && (
         <div style={{ background: "rgba(5,9,26,.97)", backdropFilter: "blur(20px)", borderTop: `1px solid rgba(0,102,255,.2)` }} className="lg:hidden px-6 pb-5">
+          {(!user || user.role === "user") && (
+            <form onSubmit={e => { e.preventDefault(); if (searchQ.trim()) { onSearch(searchQ.trim()); setMob(false); } }} className="flex gap-2 py-3 border-b" style={{ borderColor: "rgba(255,255,255,.06)" }}>
+              <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Поиск по сайту..."
+                className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+                style={{ background: "rgba(255,255,255,.1)", color: "#fff", border: "1px solid rgba(255,255,255,.15)", fontFamily: "'Inter',sans-serif" }} />
+              <button type="submit" className="p-2 rounded-xl" style={{ background: B, color: "#fff" }}>
+                <Icon name="Search" size={15} />
+              </button>
+            </form>
+          )}
           {nav.map(item => (
             <button key={item.key} onClick={() => { go(item.key); setMob(false); }}
               className="block w-full text-left py-3 border-b text-sm"
@@ -3005,9 +3048,239 @@ function ContentAdminDashboard({ user, setUser, onLogout, initialView, onViewCha
   );
 }
 
+// ─── Search Section ───────────────────────────────────────────────────────────
+function SearchSection({ query, user, news, projects, tenders, docSections, go, onLogin }: {
+  query: string;
+  user: User | null;
+  news: NewsItem[];
+  projects: ProjectItem[];
+  tenders: TenderItem[];
+  docSections: DocSection[];
+  go: (s: Section) => void;
+  onLogin: () => void;
+}) {
+  const isAuth = !!user;
+  const q = query.toLowerCase().trim();
+
+  const matchedNews = news.filter(n => !n.draft && (
+    n.title.toLowerCase().includes(q) ||
+    n.text.toLowerCase().includes(q) ||
+    n.full.toLowerCase().includes(q)
+  ));
+
+  const matchedProjects = projects.filter(p =>
+    p.title.toLowerCase().includes(q) ||
+    p.type.toLowerCase().includes(q)
+  );
+
+  const matchedTenders = tenders.filter(t =>
+    t.title.toLowerCase().includes(q)
+  );
+
+  const allDocs: Array<{ name: string; section: string }> = [];
+  docSections.forEach(s => {
+    if (s.docs) s.docs.forEach(d => allDocs.push({ name: d.name, section: s.title }));
+    if (s.subsections) s.subsections.forEach(sub => sub.docs.forEach(d => allDocs.push({ name: d.name, section: sub.title })));
+  });
+  const matchedDocs = allDocs.filter(d => d.name.toLowerCase().includes(q));
+
+  const hasGuestHidden = !isAuth && (matchedTenders.length > 0 || matchedDocs.length > 0);
+  const totalPublic = matchedNews.length + matchedProjects.length;
+  const totalAuth = matchedTenders.length + matchedDocs.length;
+  const total = isAuth ? totalPublic + totalAuth : totalPublic;
+
+  const sectionHeader = (icon: string, title: string, count: number) => (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: B + "15" }}>
+        <Icon name={icon as "Search"} size={18} style={{ color: B }} />
+      </div>
+      <h2 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK }}>{title}</h2>
+      <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: B + "15", color: B, fontFamily: "'Inter',sans-serif" }}>{count}</span>
+    </div>
+  );
+
+  return (
+    <div style={{ background: "#F7F8FC", minHeight: "calc(100vh - 90px)", paddingTop: 90 }}>
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        {/* Шапка */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Icon name="Search" size={22} style={{ color: B }} />
+            <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.4rem", color: INK, letterSpacing: "-.02em" }}>
+              Результаты поиска
+            </h1>
+          </div>
+          <p style={{ fontSize: ".9rem", color: MUT }}>
+            По запросу <strong style={{ color: INK }}>«{query}»</strong>
+            {total > 0 ? ` найдено ${total} ${total === 1 ? "результат" : total < 5 ? "результата" : "результатов"}` : " ничего не найдено"}
+          </p>
+        </div>
+
+        {/* Баннер для гостей если есть скрытые результаты */}
+        {hasGuestHidden && (
+          <div className="rounded-2xl p-4 mb-8 flex items-center gap-3" style={{ background: "#FFF8ED", border: "1.5px solid #f59e0b30" }}>
+            <Icon name="Lock" size={18} style={{ color: "#f59e0b", flexShrink: 0 }} />
+            <div>
+              <span style={{ fontSize: ".88rem", color: "#92400e", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>
+                Некоторые результаты доступны только после входа в систему
+              </span>
+              <span style={{ fontSize: ".82rem", color: "#a16207", marginLeft: 6 }}>
+                (тендеры и документация)
+              </span>
+              <button onClick={onLogin} className="ml-3 text-sm font-semibold underline" style={{ color: "#f59e0b", fontFamily: "'Inter',sans-serif" }}>Войти</button>
+            </div>
+          </div>
+        )}
+
+        {total === 0 && !hasGuestHidden && (
+          <div className="bg-white rounded-2xl p-12 text-center" style={{ border: "1px solid #E4E8F0" }}>
+            <Icon name="SearchX" size={40} style={{ color: "#D1D5DB", margin: "0 auto 16px" }} />
+            <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1.05rem", color: INK, marginBottom: 8 }}>Ничего не найдено</h3>
+            <p style={{ fontSize: ".88rem", color: MUT, marginBottom: 20 }}>Попробуйте изменить запрос или перейдите в один из разделов:</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {(["news", "projects", "tenders", "docs"] as Section[]).map(s => (
+                <button key={s} onClick={() => go(s)} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+                  style={{ background: B + "10", border: `1.5px solid ${B}30`, color: B, fontFamily: "'Inter',sans-serif" }}>
+                  {s === "news" ? "Новости" : s === "projects" ? "Проекты" : s === "tenders" ? "Тендеры" : "Документация"}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-10">
+          {/* 📰 Новости */}
+          {matchedNews.length > 0 && (
+            <div>
+              {sectionHeader("Newspaper", "Новости", matchedNews.length)}
+              <div className="space-y-3">
+                {matchedNews.map(n => (
+                  <button key={n.id} onClick={() => go("news")}
+                    className="w-full bg-white rounded-2xl p-5 text-left transition-all hover:shadow-md"
+                    style={{ border: "1px solid #E4E8F0" }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="chip" style={{ fontSize: ".68rem" }}>{n.category}</span>
+                      <span style={{ fontSize: ".72rem", color: MUT }}>{n.date}</span>
+                    </div>
+                    <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".95rem", color: INK, marginBottom: 6, lineHeight: 1.4 }}>
+                      <SearchHighlight text={n.title} query={q} />
+                    </h3>
+                    <p style={{ fontSize: ".85rem", color: MUT, lineHeight: 1.6 }} className="line-clamp-2">
+                      <SearchHighlight text={n.text} query={q} />
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 🏗️ Проекты */}
+          {matchedProjects.length > 0 && (
+            <div>
+              {sectionHeader("HardHat", "Проекты", matchedProjects.length)}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {matchedProjects.map(p => (
+                  <button key={p.id} onClick={() => go("projects")}
+                    className="bg-white rounded-2xl overflow-hidden text-left transition-all hover:shadow-md"
+                    style={{ border: "1px solid #E4E8F0" }}>
+                    <div className="relative" style={{ height: 120 }}>
+                      <img src={p.img} alt={p.title} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(5,9,26,.7), transparent)" }} />
+                      <span className="absolute bottom-2 left-3 text-xs font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: p.status === "Сдан" ? "rgba(34,197,94,.85)" : "rgba(0,102,255,.85)", color: "#fff", fontFamily: "'Inter',sans-serif" }}>
+                        {p.status}
+                      </span>
+                    </div>
+                    <div className="p-4">
+                      <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 4 }}>
+                        <SearchHighlight text={p.title} query={q} />
+                      </h3>
+                      <span style={{ fontSize: ".75rem", color: MUT }}>{p.type}{p.year ? ` · ${p.year}` : ""}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 📋 Тендеры — только авторизованным */}
+          {isAuth && matchedTenders.length > 0 && (
+            <div>
+              {sectionHeader("FileText", "Тендеры", matchedTenders.length)}
+              <div className="space-y-3">
+                {matchedTenders.map(t => (
+                  <button key={t.id} onClick={() => go("tenders")}
+                    className="w-full bg-white rounded-2xl p-5 text-left transition-all hover:shadow-md"
+                    style={{ border: "1px solid #E4E8F0" }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".95rem", color: INK, marginBottom: 4, lineHeight: 1.4 }}>
+                          <SearchHighlight text={t.title} query={q} />
+                        </h3>
+                        <div className="flex gap-3" style={{ fontSize: ".78rem", color: MUT }}>
+                          <span>{t.type}</span>
+                          <span>{t.budget}</span>
+                          <span>до {t.deadline}</span>
+                        </div>
+                      </div>
+                      <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
+                        style={{ background: t.status === "active" ? "rgba(34,197,94,.1)" : "rgba(107,114,128,.1)", color: t.status === "active" ? "#16a34a" : "#6b7280", fontFamily: "'Inter',sans-serif" }}>
+                        {t.status === "active" ? "Активен" : "Завершён"}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 📁 Документация — только авторизованным */}
+          {isAuth && matchedDocs.length > 0 && (
+            <div>
+              {sectionHeader("BookOpen", "Документация", matchedDocs.length)}
+              <div className="space-y-3">
+                {matchedDocs.map((d, i) => (
+                  <button key={i} onClick={() => go("docs")}
+                    className="w-full bg-white rounded-2xl p-5 text-left transition-all hover:shadow-md"
+                    style={{ border: "1px solid #E4E8F0" }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                        style={{ background: "rgba(239,68,68,.08)", color: "#ef4444", fontFamily: "'Inter',sans-serif" }}>PDF</div>
+                      <div>
+                        <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 2 }}>
+                          <SearchHighlight text={d.name} query={q} />
+                        </h3>
+                        <span style={{ fontSize: ".75rem", color: MUT }}>{d.section}</span>
+                      </div>
+                      <Icon name="ArrowRight" size={14} style={{ color: MUT, marginLeft: "auto" }} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SearchHighlight({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark style={{ background: "#FEF08A", color: INK, borderRadius: 3, padding: "0 2px" }}>{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 // ─── Footer ───────────────────────────────────────────────────────────────────
 function Footer({ go, cfg }: { go: (s: Section) => void; cfg: SiteConfig }) {
-  const labels: Record<Section, string> = { home: "Главная", about: "О компании", projects: "Проекты", news: "Новости", tenders: "Тендеры", docs: "Документация", contacts: "Контакты", cabinet: "Личный кабинет" };
+  const labels: Record<Section, string> = { home: "Главная", about: "О компании", projects: "Проекты", news: "Новости", tenders: "Тендеры", docs: "Документация", contacts: "Контакты", cabinet: "Личный кабинет", search: "Поиск" };
   return (
     <footer style={{ background: "#05091A", borderTop: "1px solid rgba(255,255,255,.05)" }}>
       <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
@@ -3079,11 +3352,14 @@ export default function Index() {
   const [tenderApps, setTenderApps] = useState<TenderApp[]>([
     { id: 1, date: "5 апреля 2026", tenderTitle: "Проектирование объектов инфраструктуры", company: "ООО СтройПроект", inn: "7712345678", status: "review", feedback: "Ваша заявка принята в работу. Ожидайте результатов рассмотрения до 25 апреля 2026." },
   ]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [section]);
 
   const go = (s: Section) => { setSection(s); setMob(false); };
   const logout = () => { setUser(null); go("home"); };
+
+  const handleSearch = (q: string) => { setSearchQuery(q); setSection("search"); setMob(false); };
 
   const handleSendMessage = (subject: string, text: string) => {
     setMessages(prev => [...prev, {
@@ -3147,7 +3423,7 @@ export default function Index() {
 
   return (
     <div>
-      <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
+      <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} onSearch={handleSearch} />
       <main>
         {section === "home"     && <HomeSection go={go} news={news} />}
         {section === "about"    && <AboutSection />}
@@ -3159,8 +3435,21 @@ export default function Index() {
         {section === "cabinet"  && user?.role === "user" && (
           <UserCabinet user={user} setUser={setUser} messages={messages} tenderApps={tenderApps} go={go} />
         )}
+        {section === "search" && (
+          <SearchSection
+            query={searchQuery}
+            user={user}
+            news={news}
+            projects={projects}
+            tenders={tenders}
+            docSections={docSections}
+            go={go}
+            onLogin={() => setShowLogin(true)}
+          />
+        )}
       </main>
-      {section !== "cabinet" && <Footer go={go} cfg={cfg} />}
+      {section !== "cabinet" && section !== "search" && <Footer go={go} cfg={cfg} />}
+      {section === "search" && <Footer go={go} cfg={cfg} />}
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
     </div>
   );
