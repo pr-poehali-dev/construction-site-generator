@@ -323,7 +323,7 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob, cfg }: {
 }
 
 // ─── Admin back bar ───────────────────────────────────────────────────────────
-function AdminBackBar({ go, user, onCabinet }: { go: (s: Section) => void; user: User; onCabinet: () => void }) {
+function AdminBackBar({ go, user, onCabinet, onLogout }: { go: (s: Section) => void; user: User; onCabinet: () => void; onLogout: () => void }) {
   const accentColor = user.role === "superadmin" ? "#f59e0b" : "#3385FF";
   return (
     <div style={{ background: INK }} className="px-6 py-3">
@@ -334,14 +334,19 @@ function AdminBackBar({ go, user, onCabinet }: { go: (s: Section) => void; user:
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,.5)"}>
           <Icon name="ArrowLeft" size={13} /> Вернуться в дашборд
         </button>
-        <button onClick={onCabinet} className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition-all hover:bg-white/10">
-          <div style={{ background: accentColor, width: 28, height: 28, borderRadius: 7, fontSize: ".8rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
-            className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
-          <div className="hidden md:block text-left">
-            <div style={{ color: "#fff", fontSize: ".78rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
-            <div style={{ fontSize: ".65rem", color: accentColor, fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
-          </div>
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={onCabinet} className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition-all hover:bg-white/10">
+            <div style={{ background: accentColor, width: 28, height: 28, borderRadius: 7, fontSize: ".8rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
+              className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
+            <div className="hidden md:block text-left">
+              <div style={{ color: "#fff", fontSize: ".78rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
+              <div style={{ fontSize: ".65rem", color: accentColor, fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
+            </div>
+          </button>
+          <button onClick={onLogout} title="Выйти" className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.5)" }}>
+            <Icon name="LogOut" size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2099,8 +2104,8 @@ function UsersPage({ onBack }: { onBack: () => void }) {
 }
 
 // ─── Admin Cabinet (профиль для супер/контент-адимнов) ────────────────────────
-function AdminCabinet({ user, setUser, onBack, roleLabel }: {
-  user: User; setUser: (u: User) => void; onBack: () => void; roleLabel: string;
+function AdminCabinet({ user, setUser, onBack, onLogout, roleLabel }: {
+  user: User; setUser: (u: User) => void; onBack: () => void; onLogout: () => void; roleLabel: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user.name);
@@ -2143,10 +2148,13 @@ function AdminCabinet({ user, setUser, onBack, roleLabel }: {
             <div style={{ fontSize: ".78rem", marginTop: 2, color: accentColor, fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{roleLabel}</div>
           </div>
           {saved && (
-            <span className="ml-auto flex items-center gap-1.5 text-sm" style={{ color: "#10b981", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>
+            <span className="flex items-center gap-1.5 text-sm" style={{ color: "#10b981", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>
               <Icon name="CheckCircle" size={15} /> Изменения сохранены
             </span>
           )}
+          <button onClick={onLogout} title="Выйти" className="ml-auto p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.5)" }}>
+            <Icon name="LogOut" size={16} />
+          </button>
         </div>
       </div>
 
@@ -2288,7 +2296,7 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
 
   if (view === "users") return <UsersPage onBack={() => setView("dashboard")} />;
   if (view === "settings") return <SettingsPage cfg={cfg} onSave={onCfgSave} onBack={() => setView("dashboard")} />;
-  if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} roleLabel="Суперадминистратор" />;
+  if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} onLogout={onLogout} roleLabel="Суперадминистратор" />;
 
   return (
     <div style={{ background: "#F7F8FC", minHeight: "100vh" }}>
@@ -2417,7 +2425,7 @@ function ContentAdminDashboard({ user, setUser, onLogout, initialView, onViewCha
     { icon: "Plus", label: "Добавить проект" },
   ];
 
-  if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} roleLabel="Контент-администратор" />;
+  if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} onLogout={onLogout} roleLabel="Контент-администратор" />;
 
   return (
     <div style={{ background: "#F7F8FC", minHeight: "100vh" }}>
@@ -2605,7 +2613,7 @@ export default function Index() {
     const adminSections: Section[] = ["news", "projects", "tenders"];
     const isPublicSection = adminSections.includes(section);
     const goToCabinet = () => { setAdminInitialView("cabinet"); go("home"); };
-    const superAdminBar = <AdminBackBar go={go} user={user} onCabinet={goToCabinet} />;
+    const superAdminBar = <AdminBackBar go={go} user={user} onCabinet={goToCabinet} onLogout={logout} />;
     return (
       <div>
         {isPublicSection ? (
