@@ -2089,12 +2089,157 @@ function UsersPage({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ─── Admin Cabinet (профиль для супер/контент-адимнов) ────────────────────────
+function AdminCabinet({ user, setUser, onBack, roleLabel }: {
+  user: User; setUser: (u: User) => void; onBack: () => void; roleLabel: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(user.name);
+  const [phone, setPhone] = useState(user.phone || "");
+  const [pwMode, setPwMode] = useState(false);
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [pwErr, setPwErr] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const accentColor = user.role === "superadmin" ? "#f59e0b" : "#3385FF";
+
+  const handleSave = () => {
+    setUser({ ...user, name, phone });
+    setEditing(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handlePw = () => {
+    if (!pw.trim()) { setPwErr("Введите новый пароль"); return; }
+    if (pw !== pw2) { setPwErr("Пароли не совпадают"); return; }
+    setPwErr("");
+    setPwMode(false);
+    setPw(""); setPw2("");
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  return (
+    <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
+      {/* Top bar */}
+      <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center gap-4">
+          <button onClick={onBack} className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.6)" }}>
+            <Icon name="ArrowLeft" size={18} />
+          </button>
+          <div>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", letterSpacing: "-.02em" }}>Личный кабинет</div>
+            <div style={{ fontSize: ".78rem", marginTop: 2, color: accentColor, fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{roleLabel}</div>
+          </div>
+          {saved && (
+            <span className="ml-auto flex items-center gap-1.5 text-sm" style={{ color: "#10b981", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>
+              <Icon name="CheckCircle" size={15} /> Изменения сохранены
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 py-10 space-y-6">
+        {/* Profile card */}
+        <div className="bg-white rounded-2xl p-8" style={{ border: "1px solid #E4E8F0" }}>
+          {/* Avatar + name */}
+          <div className="flex items-center gap-5 mb-8">
+            <div className="flex items-center justify-center text-white rounded-2xl flex-shrink-0"
+              style={{ width: 64, height: 64, background: accentColor, fontSize: "1.6rem", fontFamily: "'Inter',sans-serif", fontWeight: 800, borderRadius: 16 }}>
+              {user.name.charAt(0)}
+            </div>
+            <div>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.15rem", color: INK }}>{user.name}</div>
+              <div style={{ fontSize: ".8rem", color: accentColor, fontWeight: 600, fontFamily: "'Inter',sans-serif", marginTop: 2 }}>{roleLabel}</div>
+              <div style={{ fontSize: ".78rem", color: MUT, marginTop: 2 }}>{user.email}</div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK }}>Личные данные</h2>
+            {!editing
+              ? <button onClick={() => setEditing(true)} className="btn-outline text-xs py-2 px-4"><Icon name="Pencil" size={13} /> Редактировать</button>
+              : <div className="flex gap-2">
+                  <button onClick={handleSave} className="btn-primary text-xs py-2 px-4"><Icon name="Check" size={13} /> Сохранить</button>
+                  <button onClick={() => setEditing(false)} className="btn-outline text-xs py-2 px-4">Отмена</button>
+                </div>
+            }
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Имя и фамилия</label>
+              {editing
+                ? <input className="field" value={name} onChange={e => setName(e.target.value)} />
+                : <div className="px-3 py-2.5 rounded-xl" style={{ background: "#F7F8FC", fontSize: ".88rem", color: INK }}>{name}</div>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Email</label>
+              <div className="px-3 py-2.5 rounded-xl flex items-center gap-2" style={{ background: "#F7F8FC", fontSize: ".88rem", color: MUT }}>
+                {user.email} <Icon name="Lock" size={12} style={{ color: "#CBD5E1" }} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Телефон</label>
+              {editing
+                ? <input className="field" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+7 (___) ___-__-__" />
+                : <div className="px-3 py-2.5 rounded-xl" style={{ background: "#F7F8FC", fontSize: ".88rem", color: INK }}>{phone || "—"}</div>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Роль</label>
+              <div className="px-3 py-2.5 rounded-xl" style={{ background: accentColor + "12", fontSize: ".88rem", color: accentColor, fontWeight: 600 }}>{roleLabel}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Password block */}
+        <div className="bg-white rounded-2xl p-8" style={{ border: "1px solid #E4E8F0" }}>
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK }}>Безопасность</h2>
+            {!pwMode && (
+              <button onClick={() => setPwMode(true)} className="btn-outline text-xs py-2 px-4">
+                <Icon name="Key" size={13} /> Сменить пароль
+              </button>
+            )}
+          </div>
+
+          {!pwMode ? (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "#F7F8FC" }}>
+              <Icon name="Shield" size={16} style={{ color: "#10b981" }} />
+              <span style={{ fontSize: ".85rem", color: MUT }}>Пароль установлен. Последнее изменение — неизвестно.</span>
+            </div>
+          ) : (
+            <div className="space-y-4 max-w-sm">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Новый пароль</label>
+                <input type="password" className="field" value={pw} onChange={e => { setPw(e.target.value); setPwErr(""); }} placeholder="Введите новый пароль" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Повторите пароль</label>
+                <input type="password" className="field" value={pw2} onChange={e => { setPw2(e.target.value); setPwErr(""); }} placeholder="Повторите пароль"
+                  style={{ borderColor: pwErr ? "#ef4444" : undefined }} />
+                {pwErr && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{pwErr}</p>}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handlePw} className="btn-primary text-sm"><Icon name="Check" size={14} /> Сохранить пароль</button>
+                <button onClick={() => { setPwMode(false); setPw(""); setPw2(""); setPwErr(""); }} className="btn-outline text-sm">Отмена</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Superadmin Dashboard ─────────────────────────────────────────────────────
-function SuperAdminDashboard({ user, onLogout, go, cfg, onCfgSave }: {
-  user: User; onLogout: () => void; go: (s: Section) => void;
+function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave }: {
+  user: User; setUser: (u: User) => void; onLogout: () => void; go: (s: Section) => void;
   cfg: SiteConfig; onCfgSave: (c: SiteConfig) => void;
 }) {
-  const [view, setView] = useState<"dashboard" | "users" | "settings">("dashboard");
+  const [view, setView] = useState<"dashboard" | "users" | "settings" | "cabinet">("dashboard");
   const [addTender, setAddTender] = useState(false);
   const [addUser, setAddUser] = useState(false);
   const [addDoc, setAddDoc] = useState(false);
@@ -2126,6 +2271,7 @@ function SuperAdminDashboard({ user, onLogout, go, cfg, onCfgSave }: {
 
   if (view === "users") return <UsersPage onBack={() => setView("dashboard")} />;
   if (view === "settings") return <SettingsPage cfg={cfg} onSave={onCfgSave} onBack={() => setView("dashboard")} />;
+  if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} roleLabel="Суперадминистратор" />;
 
   return (
     <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
@@ -2135,9 +2281,15 @@ function SuperAdminDashboard({ user, onLogout, go, cfg, onCfgSave }: {
             <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", letterSpacing: "-.02em" }}>Дашборд АО УРСТ</div>
             <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.4)", marginTop: 2 }}>Панель суперадминистратора</div>
           </div>
-          <div style={{ fontSize: ".88rem", color: "rgba(255,255,255,.7)", fontFamily: "'Inter',sans-serif" }}>
-            Здравствуйте, <span style={{ color: "#fff", fontWeight: 600 }}>{user.name}</span>
-          </div>
+          <button onClick={() => setView("cabinet")} className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all hover:bg-white/10"
+            style={{ background: "transparent" }}>
+            <div style={{ background: "#f59e0b", width: 32, height: 32, borderRadius: 8, fontSize: ".9rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
+              className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
+            <div className="text-left hidden md:block">
+              <div style={{ color: "#fff", fontSize: ".82rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
+              <div style={{ fontSize: ".68rem", color: "#f59e0b", fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -2216,7 +2368,9 @@ function SuperAdminDashboard({ user, onLogout, go, cfg, onCfgSave }: {
 }
 
 // ─── ContentAdmin Dashboard ───────────────────────────────────────────────────
-function ContentAdminDashboard({ user }: { user: User }) {
+function ContentAdminDashboard({ user, setUser }: { user: User; setUser: (u: User) => void }) {
+  const [view, setView] = useState<"dashboard" | "cabinet">("dashboard");
+
   const statCards = [
     { icon: "Newspaper", label: "Новости", value: 12, sub: "+3 за неделю", color: "#0066FF" },
     { icon: "HardHat", label: "Проекты", value: 8, sub: "+2 за месяц", color: "#8b5cf6" },
@@ -2232,6 +2386,8 @@ function ContentAdminDashboard({ user }: { user: User }) {
     { icon: "Plus", label: "Добавить проект" },
   ];
 
+  if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} roleLabel="Контент-администратор" />;
+
   return (
     <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
       {/* Top bar */}
@@ -2241,9 +2397,15 @@ function ContentAdminDashboard({ user }: { user: User }) {
             <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", letterSpacing: "-.02em" }}>Дашборд АО УРСТ</div>
             <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.4)", marginTop: 2 }}>Панель контент-администратора</div>
           </div>
-          <div style={{ fontSize: ".88rem", color: "rgba(255,255,255,.7)", fontFamily: "'Inter',sans-serif" }}>
-            Здравствуйте, <span style={{ color: "#fff", fontWeight: 600 }}>{user.name}</span>
-          </div>
+          <button onClick={() => setView("cabinet")} className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all hover:bg-white/10"
+            style={{ background: "transparent" }}>
+            <div style={{ background: "#3385FF", width: 32, height: 32, borderRadius: 8, fontSize: ".9rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
+              className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
+            <div className="text-left hidden md:block">
+              <div style={{ color: "#fff", fontSize: ".82rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
+              <div style={{ fontSize: ".68rem", color: "#3385FF", fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -2416,7 +2578,7 @@ export default function Index() {
             {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} isAdmin adminBar={<AdminBackBar go={go} />} />}
           </main>
         ) : (
-          <SuperAdminDashboard user={user} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg} />
+          <SuperAdminDashboard user={user} setUser={setUser as (u: User) => void} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg} />
         )}
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
       </div>
@@ -2428,7 +2590,7 @@ export default function Index() {
     return (
       <div>
         <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
-        <ContentAdminDashboard user={user} />
+        <ContentAdminDashboard user={user} setUser={setUser as (u: User) => void} />
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
       </div>
     );
