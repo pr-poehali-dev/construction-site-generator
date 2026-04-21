@@ -322,10 +322,26 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob, cfg }: {
   );
 }
 
-// ─── Page Header (inner pages) ────────────────────────────────────────────────
-function PageHeader({ label, title, sub }: { label: string; title: string; sub: string }) {
+// ─── Admin back bar ───────────────────────────────────────────────────────────
+function AdminBackBar({ go }: { go: (s: Section) => void }) {
   return (
-    <div style={{ background: INK, paddingTop: 140 }} className="pb-14 px-4">
+    <div style={{ background: INK, paddingTop: 90 }} className="px-6 pt-2 pb-0">
+      <div className="max-w-7xl mx-auto">
+        <button onClick={() => go("home")} className="flex items-center gap-1.5 py-2 text-sm transition-colors"
+          style={{ color: "rgba(255,255,255,.5)", fontFamily: "'Inter',sans-serif", fontWeight: 500 }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#fff"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,.5)"}>
+          <Icon name="ArrowLeft" size={13} /> Вернуться в дашборд
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Page Header (inner pages) ────────────────────────────────────────────────
+function PageHeader({ label, title, sub, compact }: { label: string; title: string; sub: string; compact?: boolean }) {
+  return (
+    <div style={{ background: INK, paddingTop: compact ? 16 : 140 }} className="pb-10 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="chip mb-4">{label}</div>
         <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "clamp(2rem,4vw,3rem)", color: "#fff", letterSpacing: "-.03em", lineHeight: 1.1 }} className="mb-3">{title}</h1>
@@ -593,14 +609,15 @@ function AboutSection() {
 }
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
-function ProjectsSection() {
+function ProjectsSection({ adminBar }: { adminBar?: React.ReactNode } = {}) {
   const [filter, setFilter] = useState("Все");
   const types = ["Все", "ПГС", "Метро и тоннели", "Дорожное строительство", "Инженерная инфраструктура"];
   const filtered = filter === "Все" ? PROJECTS : PROJECTS.filter(p => p.type === filter);
 
   return (
     <div>
-      <PageHeader label="Портфолио" title="Проекты" sub="120+ реализованных объектов по всей России." />
+      {adminBar}
+      <PageHeader label="Портфолио" title="Проекты" sub="120+ реализованных объектов по всей России." compact={!!adminBar} />
       <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           {/* Filter chips */}
@@ -680,12 +697,13 @@ function NewsModal({ news, onClose }: { news: typeof NEWS[0]; onClose: () => voi
 }
 
 // ─── News ─────────────────────────────────────────────────────────────────────
-function NewsSection() {
+function NewsSection({ adminBar }: { adminBar?: React.ReactNode } = {}) {
   const [selected, setSelected] = useState<typeof NEWS[0] | null>(null);
 
   return (
     <div>
-      <PageHeader label="Пресс-центр" title="Новости" sub="Актуальные события компании и отрасли." />
+      {adminBar}
+      <PageHeader label="Пресс-центр" title="Новости" sub="Актуальные события компании и отрасли." compact={!!adminBar} />
       <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -878,18 +896,123 @@ function TenderApplyModal({ tender, user, onClose, onSubmit, goToCabinet }: {
   );
 }
 
-function TendersSection({ user, onAddApp, go }: { user: User | null; onAddApp: (app: Omit<TenderApp, "id">) => void; go: (s: Section) => void }) {
+type TenderItem = { id: number; title: string; deadline: string; budget: string; type: string; status: string };
+
+function EditTenderModal({ tender, onClose, onSave }: { tender: TenderItem; onClose: () => void; onSave: (t: TenderItem) => void }) {
+  const [title, setTitle] = useState(tender.title);
+  const [deadline, setDeadline] = useState(tender.deadline);
+  const [budget, setBudget] = useState(tender.budget);
+  const [type, setType] = useState(tender.type);
+  const [status, setStatus] = useState(tender.status);
+  const [fileName, setFileName] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handle = () => {
+    const errs: Record<string, string> = {};
+    if (!title.trim()) errs.title = "Введите наименование";
+    if (!deadline.trim()) errs.deadline = "Укажите дату";
+    if (!budget.trim()) errs.budget = "Укажите сумму";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    onSave({ ...tender, title, deadline, budget, type, status });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,15,30,.6)", backdropFilter: "blur(4px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div style={{ height: 4, background: B }} />
+        <div className="p-7">
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK }}>Редактировать тендер</h2>
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100" style={{ color: MUT }}><Icon name="X" size={16} /></button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Наименование *</label>
+              <input className="field" value={title} onChange={e => { setTitle(e.target.value); setErrors(p => ({ ...p, title: "" })); }}
+                style={{ borderColor: errors.title ? "#ef4444" : undefined }} />
+              {errors.title && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.title}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Дата окончания *</label>
+                <input className="field" value={deadline} onChange={e => { setDeadline(e.target.value); setErrors(p => ({ ...p, deadline: "" })); }}
+                  style={{ borderColor: errors.deadline ? "#ef4444" : undefined }} placeholder="15 мая 2026" />
+                {errors.deadline && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.deadline}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Сумма *</label>
+                <input className="field" value={budget} onChange={e => { setBudget(e.target.value); setErrors(p => ({ ...p, budget: "" })); }}
+                  style={{ borderColor: errors.budget ? "#ef4444" : undefined }} placeholder="от 5 млн ₽" />
+                {errors.budget && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.budget}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Тип</label>
+                <select className="field" value={type} onChange={e => setType(e.target.value)}>
+                  <option>Открытый конкурс</option>
+                  <option>Запрос котировок</option>
+                  <option>Запрос предложений</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Статус</label>
+                <select className="field" value={status} onChange={e => setStatus(e.target.value)}>
+                  <option value="active">Активный</option>
+                  <option value="closed">Завершён</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Пакет документов</label>
+              <label className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer" style={{ border: "1.5px dashed #CBD5E1" }}>
+                <Icon name="Upload" size={16} style={{ color: MUT }} />
+                <span style={{ fontSize: ".85rem", color: fileName ? INK : MUT }}>{fileName || "Прикрепить архив документов (PDF, ZIP)"}</span>
+                <input type="file" accept=".pdf,.zip,.doc,.docx" className="hidden" onChange={e => setFileName(e.target.files?.[0]?.name || "")} />
+              </label>
+            </div>
+            <button onClick={handle} className="btn-primary w-full justify-center">Сохранить изменения</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TendersSection({ user, onAddApp, go, isAdmin, adminBar }: {
+  user: User | null; onAddApp: (app: Omit<TenderApp, "id">) => void;
+  go: (s: Section) => void; isAdmin?: boolean; adminBar?: React.ReactNode;
+}) {
   const [tab, setTab] = useState<"active" | "closed">("active");
-  const [docsModal, setDocsModal] = useState<typeof TENDERS[0] | null>(null);
-  const [applyModal, setApplyModal] = useState<typeof TENDERS[0] | null>(null);
-  const filtered = TENDERS.filter(t => t.status === tab);
+  const [tenders, setTenders] = useState<TenderItem[]>(TENDERS);
+  const [docsModal, setDocsModal] = useState<TenderItem | null>(null);
+  const [applyModal, setApplyModal] = useState<TenderItem | null>(null);
+  const [editModal, setEditModal] = useState<TenderItem | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [addModal, setAddModal] = useState(false);
+  const filtered = tenders.filter(t => t.status === tab);
+
+  const handleAdd = (t: { title: string; deadline: string; budget: string; fileName: string }) => {
+    setTenders(p => [...p, { id: Date.now(), title: t.title, deadline: t.deadline, budget: t.budget, type: "Открытый конкурс", status: "active" }]);
+  };
 
   return (
     <div>
-      <PageHeader label="Закупки" title="Тендеры" sub="Актуальные конкурсные процедуры компании." />
+      {adminBar}
+      <PageHeader label="Закупки" title="Тендеры" sub="Актуальные конкурсные процедуры компании." compact={!!adminBar} />
       <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          {!user && (
+          {/* Admin toolbar */}
+          {isAdmin && (
+            <div className="mb-6 flex justify-end">
+              <button onClick={() => setAddModal(true)} className="btn-primary text-sm">
+                <Icon name="Plus" size={14} /> Добавить тендер
+              </button>
+            </div>
+          )}
+          {!user && !isAdmin && (
             <div className="rounded-2xl p-4 mb-8 flex items-center gap-3" style={{ background: "#FFF8ED", border: "1px solid #FDE68A" }}>
               <Icon name="Info" size={16} style={{ color: "#f59e0b" }} />
               <span style={{ fontSize: ".85rem", color: INK }}>Для скачивания документов и подачи заявок необходимо <button onClick={() => {}} className="font-semibold underline" style={{ color: B }}>войти в систему</button>.</span>
@@ -900,12 +1023,7 @@ function TendersSection({ user, onAddApp, go }: { user: User | null; onAddApp: (
             {(["active", "closed"] as const).map(t => (
               <button key={t} onClick={() => setTab(t)}
                 className="px-5 py-2 rounded-lg text-sm font-semibold transition-all"
-                style={{
-                  fontFamily: "'Inter',sans-serif",
-                  background: tab === t ? "#fff" : "transparent",
-                  color: tab === t ? INK : MUT,
-                  boxShadow: tab === t ? "0 1px 4px rgba(10,15,30,.08)" : "none",
-                }}>
+                style={{ fontFamily: "'Inter',sans-serif", background: tab === t ? "#fff" : "transparent", color: tab === t ? INK : MUT, boxShadow: tab === t ? "0 1px 4px rgba(10,15,30,.08)" : "none" }}>
                 {t === "active" ? "Активные" : "Завершённые"}
               </button>
             ))}
@@ -917,7 +1035,9 @@ function TendersSection({ user, onAddApp, go }: { user: User | null; onAddApp: (
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="chip">{tender.type}</span>
-                    {tender.status === "active" && <span style={{ fontSize: ".72rem", color: "#16a34a", fontWeight: 700, fontFamily: "'Inter',sans-serif" }}>● Активный</span>}
+                    {tender.status === "active"
+                      ? <span style={{ fontSize: ".72rem", color: "#16a34a", fontWeight: 700, fontFamily: "'Inter',sans-serif" }}>● Активный</span>
+                      : <span style={{ fontSize: ".72rem", color: MUT, fontWeight: 700, fontFamily: "'Inter',sans-serif" }}>● Завершён</span>}
                   </div>
                   <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".95rem", color: INK, marginBottom: 8 }}>{tender.title}</h3>
                   <div className="flex gap-5" style={{ fontSize: ".82rem", color: MUT }}>
@@ -925,26 +1045,70 @@ function TendersSection({ user, onAddApp, go }: { user: User | null; onAddApp: (
                     <span className="flex items-center gap-1.5"><Icon name="DollarSign" size={12} /> {tender.budget}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  {user
-                    ? <button onClick={() => setDocsModal(tender)} className="btn-outline text-xs py-2 px-4"><Icon name="FileText" size={13} /> Документы</button>
-                    : <button onClick={() => go("contacts")} className="btn-outline text-xs py-2 px-4"><Icon name="Lock" size={13} /> Документы</button>
-                  }
-                  {tender.status === "active" && (
-                    user
-                      ? <button onClick={() => setApplyModal(tender)} className="btn-primary text-xs py-2 px-4">Подать заявку</button>
-                      : <button onClick={() => go("contacts")} className="btn-primary text-xs py-2 px-4" style={{ opacity: 0.6 }}>Подать заявку</button>
+                <div className="flex gap-2 flex-shrink-0 items-center">
+                  {isAdmin ? (
+                    <>
+                      <button onClick={() => setEditModal(tender)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                        style={{ background: B + "12", color: B, border: `1px solid ${B}30`, fontFamily: "'Inter',sans-serif" }}>
+                        <Icon name="Edit" size={13} /> Редактировать
+                      </button>
+                      <button onClick={() => setDeleteId(tender.id)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                        style={{ background: "rgba(239,68,68,.08)", color: "#ef4444", border: "1px solid rgba(239,68,68,.2)", fontFamily: "'Inter',sans-serif" }}>
+                        <Icon name="Trash2" size={13} /> Удалить
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {user
+                        ? <button onClick={() => setDocsModal(tender)} className="btn-outline text-xs py-2 px-4"><Icon name="FileText" size={13} /> Документы</button>
+                        : <button onClick={() => go("contacts")} className="btn-outline text-xs py-2 px-4"><Icon name="Lock" size={13} /> Документы</button>
+                      }
+                      {tender.status === "active" && (
+                        user
+                          ? <button onClick={() => setApplyModal(tender)} className="btn-primary text-xs py-2 px-4">Подать заявку</button>
+                          : <button onClick={() => go("contacts")} className="btn-primary text-xs py-2 px-4" style={{ opacity: 0.6 }}>Подать заявку</button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
             ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-12" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>
+                <Icon name="FileText" size={36} style={{ color: "#E4E8F0", margin: "0 auto 12px" }} />
+                <p>Нет тендеров в этой категории</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
-      {docsModal && <TenderDocsModal tender={docsModal} onClose={() => setDocsModal(null)} />}
+
+      {/* Delete confirm */}
+      {deleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,15,30,.6)", backdropFilter: "blur(4px)" }}>
+          <div className="bg-white rounded-2xl w-full max-w-sm p-7 shadow-2xl text-center">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(239,68,68,.1)" }}>
+              <Icon name="Trash2" size={24} style={{ color: "#ef4444" }} />
+            </div>
+            <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK, marginBottom: 8 }}>Удалить тендер?</h3>
+            <p style={{ fontSize: ".85rem", color: MUT, marginBottom: 20 }}>Это действие нельзя отменить.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                style={{ background: "#F7F8FC", border: "1.5px solid #E4E8F0", color: INK, fontFamily: "'Inter',sans-serif" }}>Отмена</button>
+              <button onClick={() => { setTenders(p => p.filter(t => t.id !== deleteId)); setDeleteId(null); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ background: "#ef4444", fontFamily: "'Inter',sans-serif" }}>Удалить</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {addModal && <AddTenderModal onClose={() => setAddModal(false)} onAdd={handleAdd} />}
+      {editModal && <EditTenderModal tender={editModal} onClose={() => setEditModal(null)} onSave={updated => setTenders(p => p.map(t => t.id === updated.id ? updated : t))} />}
+      {docsModal && <TenderDocsModal tender={docsModal as typeof TENDERS[0]} onClose={() => setDocsModal(null)} />}
       {applyModal && user && (
         <TenderApplyModal
-          tender={applyModal}
+          tender={applyModal as typeof TENDERS[0]}
           user={user}
           onClose={() => setApplyModal(null)}
           onSubmit={app => { onAddApp(app); }}
@@ -2247,19 +2411,9 @@ export default function Index() {
         <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
         {isPublicSection ? (
           <main>
-            {/* Кнопка возврата в дашборд */}
-            <div style={{ background: INK, paddingTop: 90 }} className="px-6 py-3">
-              <div className="max-w-7xl mx-auto">
-                <button onClick={() => go("home")} className="flex items-center gap-2 text-sm" style={{ color: "rgba(255,255,255,.55)", fontFamily: "'Inter',sans-serif", fontWeight: 500 }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#fff"}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,.55)"}>
-                  <Icon name="ArrowLeft" size={14} /> Вернуться в дашборд
-                </button>
-              </div>
-            </div>
-            {section === "news"     && <NewsSection />}
-            {section === "projects" && <ProjectsSection />}
-            {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} />}
+            {section === "news"     && <NewsSection adminBar={<AdminBackBar go={go} />} />}
+            {section === "projects" && <ProjectsSection adminBar={<AdminBackBar go={go} />} />}
+            {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} isAdmin adminBar={<AdminBackBar go={go} />} />}
           </main>
         ) : (
           <SuperAdminDashboard user={user} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg} />
