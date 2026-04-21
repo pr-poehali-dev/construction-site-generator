@@ -1390,14 +1390,406 @@ function UserCabinet({ user, setUser, messages, tenderApps, go }: {
   );
 }
 
+// ─── Superadmin: types & helpers ──────────────────────────────────────────────
+interface AdminUser {
+  id: number; name: string; login: string; email: string; phone: string;
+  role: "superadmin" | "contentadmin" | "user"; regDate: string;
+  blocked?: boolean;
+}
+
+const ROLE_LABELS: Record<string, string> = { superadmin: "Суперадмин", contentadmin: "Контент-админ", user: "Пользователь" };
+const ROLE_COLORS: Record<string, string> = { superadmin: "#f59e0b", contentadmin: "#3385FF", user: "#10b981" };
+
+function AdminActionBtn({ icon, label, color, onClick }: { icon: string; label: string; color?: string; onClick: () => void }) {
+  return (
+    <button title={label} onClick={onClick}
+      className="p-1.5 rounded-lg transition-all hover:bg-gray-100"
+      style={{ color: color || MUT }}>
+      <Icon name={icon as "Edit"} size={15} />
+    </button>
+  );
+}
+
+// ─── Modals for superadmin ────────────────────────────────────────────────────
+function AddTenderModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t: { title: string; deadline: string; budget: string; fileName: string }) => void }) {
+  const [title, setTitle] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [budget, setBudget] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handle = () => {
+    const errs: Record<string, string> = {};
+    if (!title.trim()) errs.title = "Введите наименование";
+    if (!deadline.trim()) errs.deadline = "Укажите дату окончания";
+    if (!budget.trim()) errs.budget = "Укажите сумму";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    onAdd({ title, deadline, budget, fileName });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,15,30,.6)", backdropFilter: "blur(4px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div style={{ height: 4, background: B }} />
+        <div className="p-7">
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK }}>Новый тендер</h2>
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100" style={{ color: MUT }}><Icon name="X" size={16} /></button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Наименование тендера *</label>
+              <input className="field" value={title} onChange={e => { setTitle(e.target.value); setErrors(p => ({ ...p, title: "" })); }} placeholder="Строительство объекта…"
+                style={{ borderColor: errors.title ? "#ef4444" : undefined }} />
+              {errors.title && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.title}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Дата окончания *</label>
+                <input type="date" className="field" value={deadline} onChange={e => { setDeadline(e.target.value); setErrors(p => ({ ...p, deadline: "" })); }}
+                  style={{ borderColor: errors.deadline ? "#ef4444" : undefined }} />
+                {errors.deadline && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.deadline}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Сумма *</label>
+                <input className="field" value={budget} onChange={e => { setBudget(e.target.value); setErrors(p => ({ ...p, budget: "" })); }} placeholder="от 5 млн ₽"
+                  style={{ borderColor: errors.budget ? "#ef4444" : undefined }} />
+                {errors.budget && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.budget}</p>}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Пакет документов</label>
+              <label className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer" style={{ border: "1.5px dashed #CBD5E1" }}>
+                <Icon name="Upload" size={16} style={{ color: MUT }} />
+                <span style={{ fontSize: ".85rem", color: fileName ? INK : MUT }}>{fileName || "Прикрепить архив документов (PDF, ZIP)"}</span>
+                <input type="file" accept=".pdf,.zip,.doc,.docx" className="hidden" onChange={e => setFileName(e.target.files?.[0]?.name || "")} />
+              </label>
+            </div>
+            <button onClick={handle} className="btn-primary w-full justify-center">Создать тендер <Icon name="Plus" size={14} /></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (u: AdminUser) => void }) {
+  const [name, setName] = useState("");
+  const [login, setLogin] = useState("");
+  const [pw, setPw] = useState("");
+  const [email, setEmail] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handle = () => {
+    const errs: Record<string, string> = {};
+    if (!name.trim()) errs.name = "Введите ФИО";
+    if (!login.trim()) errs.login = "Введите логин";
+    if (!pw.trim()) errs.pw = "Введите пароль";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    onAdd({ id: Date.now(), name, login, email: email || login + "@ao-urst.ru", phone: "—", role: "user", regDate: new Date().toLocaleDateString("ru-RU") });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,15,30,.6)", backdropFilter: "blur(4px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div style={{ height: 4, background: "#10b981" }} />
+        <div className="p-7">
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK }}>Новый пользователь</h2>
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100" style={{ color: MUT }}><Icon name="X" size={16} /></button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>ФИО *</label>
+              <input className="field" value={name} onChange={e => { setName(e.target.value); setErrors(p => ({ ...p, name: "" })); }} placeholder="Иванов Иван Иванович"
+                style={{ borderColor: errors.name ? "#ef4444" : undefined }} />
+              {errors.name && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.name}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Логин *</label>
+              <input className="field" value={login} onChange={e => { setLogin(e.target.value); setErrors(p => ({ ...p, login: "" })); }} placeholder="ivanov"
+                style={{ borderColor: errors.login ? "#ef4444" : undefined }} />
+              {errors.login && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.login}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Email</label>
+              <input type="email" className="field" value={email} onChange={e => setEmail(e.target.value)} placeholder="ivanov@ao-urst.ru" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Пароль *</label>
+              <input type="password" className="field" value={pw} onChange={e => { setPw(e.target.value); setErrors(p => ({ ...p, pw: "" })); }} placeholder="Введите пароль"
+                style={{ borderColor: errors.pw ? "#ef4444" : undefined }} />
+              {errors.pw && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.pw}</p>}
+            </div>
+            <button onClick={handle} className="btn-primary w-full justify-center">Добавить пользователя <Icon name="UserPlus" size={14} /></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddDocModal({ onClose }: { onClose: () => void }) {
+  const existingSections = DOCS_SECTIONS.map(s => s.title);
+  const [useExisting, setUseExisting] = useState(true);
+  const [selectedSection, setSelectedSection] = useState(existingSections[0]);
+  const [newSection, setNewSection] = useState("");
+  const [docName, setDocName] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handle = () => {
+    const errs: Record<string, string> = {};
+    if (!docName.trim()) errs.docName = "Введите наименование документа";
+    if (!useExisting && !newSection.trim()) errs.newSection = "Введите название нового раздела";
+    if (!fileName) errs.file = "Прикрепите файл";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,15,30,.6)", backdropFilter: "blur(4px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div style={{ height: 4, background: "#8b5cf6" }} />
+        <div className="p-7">
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK }}>Добавить документ</h2>
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100" style={{ color: MUT }}><Icon name="X" size={16} /></button>
+          </div>
+          <div className="space-y-4">
+            {/* Раздел */}
+            <div>
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Раздел документации *</label>
+              <div className="flex gap-3 mb-3">
+                <button onClick={() => setUseExisting(true)}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all"
+                  style={{ background: useExisting ? INK : "#F7F8FC", color: useExisting ? "#fff" : MUT, border: `1.5px solid ${useExisting ? INK : "#E4E8F0"}`, fontFamily: "'Inter',sans-serif" }}>
+                  Существующий
+                </button>
+                <button onClick={() => setUseExisting(false)}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all"
+                  style={{ background: !useExisting ? INK : "#F7F8FC", color: !useExisting ? "#fff" : MUT, border: `1.5px solid ${!useExisting ? INK : "#E4E8F0"}`, fontFamily: "'Inter',sans-serif" }}>
+                  Новый раздел
+                </button>
+              </div>
+              {useExisting ? (
+                <select className="field" value={selectedSection} onChange={e => setSelectedSection(e.target.value)}>
+                  {existingSections.map(s => <option key={s}>{s}</option>)}
+                </select>
+              ) : (
+                <>
+                  <input className="field" value={newSection} onChange={e => { setNewSection(e.target.value); setErrors(p => ({ ...p, newSection: "" })); }}
+                    placeholder="Название нового раздела" style={{ borderColor: errors.newSection ? "#ef4444" : undefined }} />
+                  {errors.newSection && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.newSection}</p>}
+                </>
+              )}
+            </div>
+            {/* Наименование */}
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Наименование документа *</label>
+              <input className="field" value={docName} onChange={e => { setDocName(e.target.value); setErrors(p => ({ ...p, docName: "" })); }}
+                placeholder="Название документа" style={{ borderColor: errors.docName ? "#ef4444" : undefined }} />
+              {errors.docName && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.docName}</p>}
+            </div>
+            {/* Файл */}
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Файл *</label>
+              <label className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all"
+                style={{ border: `1.5px dashed ${errors.file ? "#ef4444" : "#CBD5E1"}` }}>
+                <Icon name="Upload" size={16} style={{ color: MUT }} />
+                <span style={{ fontSize: ".85rem", color: fileName ? INK : MUT }}>{fileName || "Загрузить файл (PDF, DOCX)"}</span>
+                <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { setFileName(e.target.files?.[0]?.name || ""); setErrors(p => ({ ...p, file: "" })); }} />
+              </label>
+              {errors.file && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.file}</p>}
+            </div>
+            <button onClick={handle} className="btn-primary w-full justify-center">Добавить документ <Icon name="FilePlus" size={14} /></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditUserModal({ adminUser, onClose, onSave }: { adminUser: AdminUser; onClose: () => void; onSave: (u: AdminUser) => void }) {
+  const [name, setName] = useState(adminUser.name);
+  const [email, setEmail] = useState(adminUser.email);
+  const [pw, setPw] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handle = () => {
+    const errs: Record<string, string> = {};
+    if (!name.trim()) errs.name = "Введите ФИО";
+    if (!email.trim()) errs.email = "Введите email";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    onSave({ ...adminUser, name, email });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,15,30,.6)", backdropFilter: "blur(4px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div style={{ height: 4, background: B }} />
+        <div className="p-7">
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK }}>Редактирование пользователя</h2>
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100" style={{ color: MUT }}><Icon name="X" size={16} /></button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>ФИО *</label>
+              <input className="field" value={name} onChange={e => { setName(e.target.value); setErrors(p => ({ ...p, name: "" })); }}
+                style={{ borderColor: errors.name ? "#ef4444" : undefined }} />
+              {errors.name && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.name}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Email *</label>
+              <input type="email" className="field" value={email} onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: "" })); }}
+                style={{ borderColor: errors.email ? "#ef4444" : undefined }} />
+              {errors.email && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.email}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Новый пароль</label>
+              <input type="password" className="field" value={pw} onChange={e => setPw(e.target.value)} placeholder="Оставьте пустым, если не меняете" />
+              {pw && <p style={{ color: "#10b981", fontSize: ".75rem", marginTop: 4 }}>Пароль будет сброшен</p>}
+            </div>
+            <button onClick={handle} className="btn-primary w-full justify-center">Сохранить изменения</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Users Page ───────────────────────────────────────────────────────────────
+function UsersPage({ onBack }: { onBack: () => void }) {
+  const [users, setUsers] = useState<AdminUser[]>([
+    { id: 1, name: "Иванов Иван Петрович", login: "ivanov", email: "ivanov@ao-urst.ru", phone: "+7 (916) 111-11-11", role: "user", regDate: "10.01.2026" },
+    { id: 2, name: "Петрова Мария Сергеевна", login: "petrova", email: "petrova@ao-urst.ru", phone: "+7 (916) 222-22-22", role: "user", regDate: "15.02.2026" },
+    { id: 3, name: "Сидоров Алексей Юрьевич", login: "sidorov", email: "sidorov@ao-urst.ru", phone: "+7 (916) 333-33-33", role: "contentadmin", regDate: "20.03.2026" },
+    { id: 4, name: "Козлова Анна Дмитриевна", login: "kozlova", email: "kozlova@ao-urst.ru", phone: "+7 (916) 444-44-44", role: "user", regDate: "01.04.2026" },
+    { id: 5, name: "Новиков Дмитрий Игоревич", login: "novikov", email: "novikov@ao-urst.ru", phone: "+7 (916) 555-55-55", role: "user", regDate: "05.04.2026", blocked: true },
+  ]);
+  const [addModal, setAddModal] = useState(false);
+  const [editUser, setEditUser] = useState<AdminUser | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const changeRole = (id: number, role: AdminUser["role"]) => setUsers(p => p.map(u => u.id === id ? { ...u, role } : u));
+  const toggleBlock = (id: number) => setUsers(p => p.map(u => u.id === id ? { ...u, blocked: !u.blocked } : u));
+  const deleteUser = (id: number) => { setUsers(p => p.filter(u => u.id !== id)); setDeleteId(null); };
+
+  return (
+    <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
+      <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-4">
+          <button onClick={onBack} className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.6)" }}>
+            <Icon name="ArrowLeft" size={18} />
+          </button>
+          <div>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", letterSpacing: "-.02em" }}>Пользователи</div>
+            <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.4)", marginTop: 2 }}>Управление учётными записями</div>
+          </div>
+          <div className="ml-auto">
+            <button onClick={() => setAddModal(true)} className="btn-primary text-sm">
+              <Icon name="UserPlus" size={14} /> Добавить пользователя
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #E4E8F0" }}>
+          {/* Table header */}
+          <div className="hidden md:grid px-5 py-3 gap-4 text-xs font-bold uppercase tracking-wider"
+            style={{ gridTemplateColumns: "2fr 1.2fr 1.5fr 1.2fr 1fr 0.8fr auto", color: MUT, fontFamily: "'Inter',sans-serif", background: "#F7F8FC", borderBottom: "1px solid #E4E8F0" }}>
+            <span>ФИО</span><span>Логин</span><span>Email</span><span>Телефон</span><span>Дата регистрации</span><span>Роль</span><span>Действия</span>
+          </div>
+
+          {users.map((u, i) => (
+            <div key={u.id} className="px-5 py-4 flex flex-col md:grid gap-4 items-center"
+              style={{ gridTemplateColumns: "2fr 1.2fr 1.5fr 1.2fr 1fr 0.8fr auto", borderBottom: i < users.length - 1 ? "1px solid #E4E8F0" : "none", opacity: u.blocked ? 0.6 : 1 }}>
+              {/* ФИО */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                  style={{ background: ROLE_COLORS[u.role] + "cc", fontFamily: "'Inter',sans-serif" }}>{u.name.charAt(0)}</div>
+                <div className="min-w-0">
+                  <div style={{ fontWeight: 600, fontSize: ".85rem", color: INK, fontFamily: "'Inter',sans-serif" }} className="truncate">{u.name}</div>
+                  {u.blocked && <span style={{ fontSize: ".68rem", color: "#ef4444", fontWeight: 600 }}>Заблокирован</span>}
+                </div>
+              </div>
+              {/* Логин */}
+              <div style={{ fontSize: ".82rem", color: MUT, fontFamily: "'Inter',sans-serif" }}>{u.login}</div>
+              {/* Email */}
+              <div style={{ fontSize: ".82rem", color: MUT, fontFamily: "'Inter',sans-serif" }} className="truncate">{u.email}</div>
+              {/* Телефон */}
+              <div style={{ fontSize: ".82rem", color: MUT, fontFamily: "'Inter',sans-serif" }}>{u.phone}</div>
+              {/* Дата */}
+              <div style={{ fontSize: ".82rem", color: MUT, fontFamily: "'Inter',sans-serif" }}>{u.regDate}</div>
+              {/* Роль */}
+              <div>
+                <select value={u.role} onChange={e => changeRole(u.id, e.target.value as AdminUser["role"])}
+                  className="rounded-lg px-2 py-1 text-xs font-semibold border-0 outline-none cursor-pointer"
+                  style={{ background: ROLE_COLORS[u.role] + "18", color: ROLE_COLORS[u.role], fontFamily: "'Inter',sans-serif" }}>
+                  <option value="user">Пользователь</option>
+                  <option value="contentadmin">Контент-админ</option>
+                  <option value="superadmin">Суперадмин</option>
+                </select>
+              </div>
+              {/* Действия */}
+              <div className="flex items-center gap-1">
+                <AdminActionBtn icon="Edit" label="Редактировать" color={B} onClick={() => setEditUser(u)} />
+                <AdminActionBtn icon={u.blocked ? "Unlock" : "Lock"} label={u.blocked ? "Разблокировать" : "Заблокировать"} color={u.blocked ? "#10b981" : "#f59e0b"} onClick={() => toggleBlock(u.id)} />
+                <AdminActionBtn icon="Trash2" label="Удалить" color="#ef4444" onClick={() => setDeleteId(u.id)} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Delete confirm */}
+      {deleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,15,30,.6)", backdropFilter: "blur(4px)" }}>
+          <div className="bg-white rounded-2xl w-full max-w-sm p-7 shadow-2xl text-center">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(239,68,68,.1)" }}>
+              <Icon name="Trash2" size={24} style={{ color: "#ef4444" }} />
+            </div>
+            <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK, marginBottom: 8 }}>Удалить пользователя?</h3>
+            <p style={{ fontSize: ".85rem", color: MUT, marginBottom: 20 }}>Это действие нельзя отменить.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                style={{ background: "#F7F8FC", border: "1.5px solid #E4E8F0", color: INK, fontFamily: "'Inter',sans-serif" }}>Отмена</button>
+              <button onClick={() => deleteUser(deleteId)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ background: "#ef4444", fontFamily: "'Inter',sans-serif" }}>Удалить</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {addModal && <AddUserModal onClose={() => setAddModal(false)} onAdd={u => setUsers(p => [...p, u])} />}
+      {editUser && <EditUserModal adminUser={editUser} onClose={() => setEditUser(null)} onSave={updated => setUsers(p => p.map(u => u.id === updated.id ? updated : u))} />}
+    </div>
+  );
+}
+
 // ─── Superadmin Dashboard ─────────────────────────────────────────────────────
-function SuperAdminDashboard({ user, onLogout }: { user: User; onLogout: () => void }) {
+function SuperAdminDashboard({ user, onLogout, go }: { user: User; onLogout: () => void; go: (s: Section) => void }) {
+  const [view, setView] = useState<"dashboard" | "users">("dashboard");
+  const [addTender, setAddTender] = useState(false);
+  const [addUser, setAddUser] = useState(false);
+  const [addDoc, setAddDoc] = useState(false);
+
   const statCards = [
-    { icon: "Newspaper", label: "Новости", value: 12, sub: "+3 за неделю", color: "#0066FF" },
-    { icon: "HardHat", label: "Проекты", value: 8, sub: "+2 за месяц", color: "#8b5cf6" },
-    { icon: "FileText", label: "Тендеры", value: 5, sub: "+1 за неделю", color: "#f59e0b" },
-    { icon: "Users", label: "Пользователи", value: 45, sub: "+5 за неделю", color: "#10b981" },
+    { icon: "Newspaper", label: "Новости за неделю", value: 3, sub: "Всего: 12", color: "#0066FF", onClick: () => go("news") },
+    { icon: "HardHat", label: "Проекты", value: 8, sub: "+2 за месяц", color: "#8b5cf6", onClick: () => go("projects") },
+    { icon: "FileText", label: "Тендеры", value: 5, sub: "+1 за неделю", color: "#f59e0b", onClick: () => go("tenders") },
+    { icon: "Users", label: "Пользователи", value: 45, sub: "+5 за неделю", color: "#10b981", onClick: () => setView("users") },
   ];
+
   const recentNews = [
     { title: "Завершено строительство моста", date: "15.04.2026", draft: false },
     { title: "Получен сертификат ISO 9001", date: "10.04.2026", draft: false },
@@ -1408,18 +1800,18 @@ function SuperAdminDashboard({ user, onLogout }: { user: User; onLogout: () => v
     { name: "Петров П.", when: "вчера" },
     { name: "Сидорова А.", when: "2 дня назад" },
   ];
+
   const actions = [
-    { icon: "Plus", label: "Добавить новость" },
-    { icon: "Plus", label: "Добавить проект" },
-    { icon: "Plus", label: "Добавить тендер" },
-    { icon: "UserPlus", label: "Добавить пользователя" },
-    { icon: "FilePlus", label: "Добавить документ" },
-    { icon: "Settings", label: "Настройки" },
+    { icon: "Plus", label: "Добавить тендер", onClick: () => setAddTender(true) },
+    { icon: "UserPlus", label: "Добавить пользователя", onClick: () => setAddUser(true) },
+    { icon: "FilePlus", label: "Добавить документ", onClick: () => setAddDoc(true) },
+    { icon: "Settings", label: "Настройки", onClick: () => {} },
   ];
+
+  if (view === "users") return <UsersPage onBack={() => setView("dashboard")} />;
 
   return (
     <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
-      {/* Top bar */}
       <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
@@ -1436,27 +1828,17 @@ function SuperAdminDashboard({ user, onLogout }: { user: User; onLogout: () => v
         {/* Stat cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {statCards.map((s, i) => (
-            <div key={i} className="bg-white rounded-2xl p-5 card-lift" style={{ border: "1px solid #E4E8F0" }}>
+            <button key={i} onClick={s.onClick}
+              className="bg-white rounded-2xl p-5 text-left transition-all hover:shadow-md"
+              style={{ border: "1px solid #E4E8F0" }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: s.color + "18", marginBottom: 12 }} className="flex items-center justify-center">
                 <Icon name={s.icon as "Users"} size={20} style={{ color: s.color }} />
               </div>
               <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.8rem", color: INK, letterSpacing: "-.03em", lineHeight: 1 }}>{s.value}</div>
               <div style={{ fontSize: ".8rem", fontWeight: 600, color: INK, fontFamily: "'Inter',sans-serif", marginTop: 4 }}>{s.label}</div>
               <div style={{ fontSize: ".72rem", color: s.color, marginTop: 3 }}>{s.sub}</div>
-            </div>
+            </button>
           ))}
-        </div>
-
-        {/* Badges row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl px-5 py-4 flex items-center gap-3" style={{ border: "1px solid #E4E8F0" }}>
-            <Icon name="FileEdit" size={18} style={{ color: "#f59e0b" }} />
-            <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: ".88rem", color: INK }}>Черновики: <span style={{ color: "#f59e0b" }}>2</span></span>
-          </div>
-          <div className="bg-white rounded-2xl px-5 py-4 flex items-center gap-3" style={{ border: "1px solid #E4E8F0" }}>
-            <Icon name="Clock" size={18} style={{ color: "#ef4444" }} />
-            <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: ".88rem", color: INK }}>Скоро закрываются тендеры: <span style={{ color: "#ef4444" }}>3</span></span>
-          </div>
         </div>
 
         {/* Tables row */}
@@ -1498,7 +1880,7 @@ function SuperAdminDashboard({ user, onLogout }: { user: User; onLogout: () => v
           <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 14, letterSpacing: ".04em", textTransform: "uppercase" }}>Быстрые действия</div>
           <div className="flex flex-wrap gap-3">
             {actions.map((a, i) => (
-              <button key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all"
+              <button key={i} onClick={a.onClick} className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all"
                 style={{ background: "#F7F8FC", border: "1.5px solid #E4E8F0", fontSize: ".82rem", fontFamily: "'Inter',sans-serif", fontWeight: 600, color: INK }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = B; (e.currentTarget as HTMLElement).style.color = B; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E4E8F0"; (e.currentTarget as HTMLElement).style.color = INK; }}>
@@ -1508,6 +1890,10 @@ function SuperAdminDashboard({ user, onLogout }: { user: User; onLogout: () => v
           </div>
         </div>
       </div>
+
+      {addTender && <AddTenderModal onClose={() => setAddTender(false)} onAdd={() => {}} />}
+      {addUser && <AddUserModal onClose={() => setAddUser(false)} onAdd={() => {}} />}
+      {addDoc && <AddDocModal onClose={() => setAddDoc(false)} />}
     </div>
   );
 }
@@ -1704,7 +2090,7 @@ export default function Index() {
     return (
       <div>
         <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} />
-        <SuperAdminDashboard user={user} onLogout={logout} />
+        <SuperAdminDashboard user={user} onLogout={logout} go={go} />
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
       </div>
     );
