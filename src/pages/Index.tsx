@@ -46,13 +46,77 @@ const TENDERS = [
   { id: 4, title: "Проектирование объектов инфраструктуры", deadline: "20 апреля 2026", budget: "от 8 млн ₽", type: "Запрос котировок", status: "closed" },
   { id: 5, title: "Поставка строительных материалов 2026", deadline: "1 апреля 2026", budget: "от 62 млн ₽", type: "Открытый конкурс", status: "closed" },
 ];
-const DOCS = [
-  { id: 1, name: "Устав АО «УРСТ»", type: "PDF", size: "2.4 МБ", category: "Учредительные", date: "01.01.2020" },
-  { id: 2, name: "Лицензия на строительную деятельность", type: "PDF", size: "1.1 МБ", category: "Лицензии", date: "15.03.2023" },
-  { id: 3, name: "Сертификат ISO 9001:2015", type: "PDF", size: "0.8 МБ", category: "Сертификаты", date: "10.06.2024" },
-  { id: 4, name: "Допуск СРО на особо опасные объекты", type: "PDF", size: "1.6 МБ", category: "СРО", date: "22.09.2023" },
-  { id: 5, name: "Финансовая отчётность 2025", type: "XLSX", size: "3.2 МБ", category: "Финансы", date: "28.02.2026", restricted: true },
-  { id: 6, name: "Технические регламенты и стандарты", type: "PDF", size: "5.7 МБ", category: "Техническая", date: "01.04.2026" },
+const DOCS_SECTIONS = [
+  {
+    id: "contractors",
+    title: "Подрядным организациям",
+    icon: "HardHat",
+    docs: [
+      { id: 1, name: "Регламент ИД", type: "PDF", size: "1.2 МБ" },
+      { id: 2, name: "Соглашение КОТПБиООС", type: "PDF", size: "0.9 МБ" },
+      { id: 3, name: "Стандарт ЭК", type: "PDF", size: "0.7 МБ" },
+      { id: 4, name: "Положение о закупках", type: "PDF", size: "1.4 МБ" },
+    ],
+  },
+  {
+    id: "pricelist",
+    title: "Прайс-лист на услуги техники с экипажем и оборудования",
+    icon: "Receipt",
+    docs: [
+      { id: 5, name: "Прайс-лист", type: "PDF", size: "0.6 МБ" },
+    ],
+  },
+  {
+    id: "certs",
+    title: "Сертификаты соответствия ИСМ",
+    icon: "BadgeCheck",
+    docs: [
+      { id: 6, name: "ISO 9001:2015", type: "PDF", size: "0.8 МБ" },
+      { id: 7, name: "ISO 14001:2015", type: "PDF", size: "0.8 МБ" },
+      { id: 8, name: "ISO 45001:2018", type: "PDF", size: "0.8 МБ" },
+    ],
+  },
+  {
+    id: "personaldata",
+    title: "Положение об обработке и защите персональных данных работников",
+    icon: "ShieldCheck",
+    docs: [
+      { id: 9, name: "Защита персональных данных", type: "PDF", size: "1.1 МБ" },
+    ],
+  },
+  {
+    id: "labor",
+    title: "Охрана труда",
+    icon: "HardHat",
+    subsections: [
+      {
+        id: "soут",
+        title: "СОУТ — Специальная Оценка Условий Труда",
+        docs: [
+          { id: 10, name: "Перечень мероприятий 17.03.2025", type: "PDF", size: "0.9 МБ" },
+          { id: 11, name: "Сводная ведомость 17.03.2025", type: "PDF", size: "1.3 МБ" },
+          { id: 12, name: "Перечень мероприятий 15.11.2025", type: "PDF", size: "0.9 МБ" },
+          { id: 13, name: "Сводная ведомость 15.11.2025", type: "PDF", size: "1.3 МБ" },
+        ],
+      },
+      {
+        id: "policies",
+        title: 'Политики АО "Мосинжпроект" применяемые в АО "УРСТ"',
+        docs: [
+          { id: 14, name: "Политика в области употребления алкоголя, наркотических и психотропных веществ", type: "PDF", size: "0.5 МБ" },
+          { id: 15, name: "Политика о вмешательстве в опасные ситуации. Право на приостановку (прекращение) работ", type: "PDF", size: "0.6 МБ" },
+          { id: 16, name: 'Политика интегрированной системы менеджмента АО "Мосинжпроект" и его дочерних обществ', type: "PDF", size: "0.7 МБ" },
+        ],
+      },
+      {
+        id: "ecology",
+        title: "Охрана окружающей среды / Экологические аспекты",
+        docs: [
+          { id: 17, name: "Реестр экологических аспектов", type: "PDF", size: "1.0 МБ" },
+        ],
+      },
+    ],
+  },
 ];
 
 const B = "#0066FF";   // accent blue
@@ -869,16 +933,42 @@ function TendersSection({ user, onAddApp, go }: { user: User | null; onAddApp: (
 }
 
 // ─── Docs ─────────────────────────────────────────────────────────────────────
+function DocRow({ doc }: { doc: { id: number; name: string; type: string; size: string } }) {
+  return (
+    <div className="flex items-center justify-between py-3 px-4 rounded-xl transition-all"
+      style={{ border: "1px solid #E4E8F0" }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,102,255,.3)"; (e.currentTarget as HTMLElement).style.background = "#F8FBFF"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E4E8F0"; (e.currentTarget as HTMLElement).style.background = ""; }}>
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+          style={{ fontFamily: "'Inter',sans-serif", background: "rgba(239,68,68,.08)", color: "#ef4444" }}>
+          PDF
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: ".85rem", color: INK, fontFamily: "'Inter',sans-serif", lineHeight: 1.4 }}>{doc.name}</div>
+          <div style={{ fontSize: ".72rem", color: MUT, marginTop: 2 }}>{doc.size}</div>
+        </div>
+      </div>
+      <button className="flex items-center gap-1.5 flex-shrink-0 ml-4"
+        style={{ color: B, fontSize: ".8rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>
+        <Icon name="Download" size={13} /> Скачать
+      </button>
+    </div>
+  );
+}
+
 function DocsSection({ user }: { user: User | null }) {
-  const categories = ["Все", "Учредительные", "Лицензии", "Сертификаты", "СРО", "Финансы", "Техническая"];
-  const [cat, setCat] = useState("Все");
-  const filtered = cat === "Все" ? DOCS : DOCS.filter(d => d.category === cat);
+  const [open, setOpen] = useState<Record<string, boolean>>({ contractors: true });
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({});
+
+  const toggle = (id: string) => setOpen(p => ({ ...p, [id]: !p[id] }));
+  const toggleSub = (id: string) => setOpenSub(p => ({ ...p, [id]: !p[id] }));
 
   return (
     <div>
-      <PageHeader label="Документы" title="Документация" sub="Лицензии, сертификаты и корпоративные документы компании." />
+      <PageHeader label="Документы" title="Документация" sub="Нормативные, технические и корпоративные документы компании." />
       <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-6">
           {!user && (
             <div className="rounded-2xl p-4 mb-8 flex items-center gap-3"
               style={{ background: "#F7F8FC", border: "1px solid #E4E8F0" }}>
@@ -886,50 +976,55 @@ function DocsSection({ user }: { user: User | null }) {
               <span style={{ fontSize: ".85rem", color: MUT }}>Некоторые документы доступны только авторизованным пользователям.</span>
             </div>
           )}
-          {/* Category filter */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {categories.map(c => (
-              <button key={c} onClick={() => setCat(c)}
-                className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
-                style={{
-                  fontFamily: "'Inter',sans-serif",
-                  background: cat === c ? INK : "#F7F8FC",
-                  color: cat === c ? "#fff" : MUT,
-                  border: `1.5px solid ${cat === c ? INK : "#E4E8F0"}`,
-                }}>
-                {c}
-              </button>
-            ))}
-          </div>
-          <div className="space-y-2">
-            {filtered.map(doc => {
-              const restricted = (doc as typeof doc & { restricted?: boolean }).restricted && !user;
-              return (
-                <div key={doc.id} className="flex items-center justify-between p-4 rounded-xl transition-all"
-                  style={{ border: "1px solid #E4E8F0", opacity: restricted ? .55 : 1 }}
-                  onMouseEnter={e => { if (!restricted) (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,102,255,.3)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E4E8F0"; }}>
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold"
-                      style={{ fontFamily: "'Inter',sans-serif", background: doc.type === "PDF" ? "rgba(239,68,68,.08)" : "rgba(34,197,94,.08)", color: doc.type === "PDF" ? "#ef4444" : "#16a34a" }}>
-                      {doc.type}
+          <div className="space-y-3">
+            {DOCS_SECTIONS.map(section => (
+              <div key={section.id} className="rounded-2xl overflow-hidden" style={{ border: "1px solid #E4E8F0" }}>
+                {/* Section header */}
+                <button
+                  onClick={() => toggle(section.id)}
+                  className="w-full flex items-center justify-between p-5 text-left transition-all"
+                  style={{ background: open[section.id] ? "#F0F7FF" : "#fff" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: open[section.id] ? B : "#F7F8FC" }}>
+                      <Icon name={section.icon as "HardHat"} size={16} style={{ color: open[section.id] ? "#fff" : MUT }} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2" style={{ fontWeight: 600, fontSize: ".88rem", color: INK, fontFamily: "'Inter',sans-serif" }}>
-                        {doc.name}
-                        {(doc as typeof doc & { restricted?: boolean }).restricted && <Icon name="Lock" size={12} style={{ color: B }} />}
-                      </div>
-                      <div style={{ fontSize: ".75rem", color: MUT, marginTop: 2 }}>{doc.category} · {doc.size} · {doc.date}</div>
-                    </div>
+                    <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".92rem", color: INK, lineHeight: 1.4 }}>{section.title}</span>
                   </div>
-                  <button style={{ color: restricted ? "#ccd4e0" : B, fontSize: ".8rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}
-                    className="flex items-center gap-1.5" disabled={!!restricted}>
-                    <Icon name={restricted ? "Lock" : "Download"} size={13} />
-                    {restricted ? "Войдите" : "Скачать"}
-                  </button>
-                </div>
-              );
-            })}
+                  <Icon name={open[section.id] ? "ChevronUp" : "ChevronDown"} size={18} style={{ color: MUT, flexShrink: 0, marginLeft: 12 }} />
+                </button>
+
+                {/* Section body */}
+                {open[section.id] && (
+                  <div className="px-5 pb-5" style={{ borderTop: "1px solid #E4E8F0" }}>
+                    {"subsections" in section ? (
+                      <div className="pt-4 space-y-3">
+                        {section.subsections!.map(sub => (
+                          <div key={sub.id} className="rounded-xl overflow-hidden" style={{ border: "1px solid #E4E8F0" }}>
+                            <button
+                              onClick={() => toggleSub(sub.id)}
+                              className="w-full flex items-center justify-between px-4 py-3 text-left transition-all"
+                              style={{ background: openSub[sub.id] ? "#F7F8FC" : "#fff" }}>
+                              <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: ".85rem", color: INK }}>{sub.title}</span>
+                              <Icon name={openSub[sub.id] ? "ChevronUp" : "ChevronDown"} size={15} style={{ color: MUT, flexShrink: 0, marginLeft: 12 }} />
+                            </button>
+                            {openSub[sub.id] && (
+                              <div className="px-4 pb-4 space-y-2" style={{ borderTop: "1px solid #E4E8F0", paddingTop: 12 }}>
+                                {sub.docs.map(doc => <DocRow key={doc.id} doc={doc} />)}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="pt-4 space-y-2">
+                        {section.docs!.map(doc => <DocRow key={doc.id} doc={doc} />)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
