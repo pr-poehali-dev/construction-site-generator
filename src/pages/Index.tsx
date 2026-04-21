@@ -123,6 +123,26 @@ const B = "#0066FF";   // accent blue
 const INK = "#0A0F1E"; // dark text
 const MUT = "#6B7896"; // muted
 
+// ─── Site Config ──────────────────────────────────────────────────────────────
+interface SiteConfig {
+  siteName: string;
+  phone: string;
+  email: string;
+  schedule: string;
+  address: string;
+  footerCopyright: string;
+  footerDesc: string;
+}
+const DEFAULT_CONFIG: SiteConfig = {
+  siteName: "АО УРСТ",
+  phone: "+7 (495) 940-07-03",
+  email: "info@ao-urst.ru",
+  schedule: "Пн–Пт, 9:00–18:00",
+  address: "г. Москва, ул. Климашкина 22 с 2",
+  footerCopyright: "© 2026 АО «УРСТ». Все права защищены.",
+  footerDesc: "Полный цикл строительства от проектирования до сдачи объекта.",
+};
+
 // ─── Login Modal ──────────────────────────────────────────────────────────────
 function LoginModal({ onClose, onLogin }: { onClose: () => void; onLogin: (u: User) => void }) {
   const [email, setEmail] = useState("");
@@ -179,9 +199,10 @@ function LoginModal({ onClose, onLogin }: { onClose: () => void; onLogin: (u: Us
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
-function Header({ active, go, user, onLogin, onLogout, mob, setMob }: {
+function Header({ active, go, user, onLogin, onLogout, mob, setMob, cfg }: {
   active: Section; go: (s: Section) => void; user: User | null;
   onLogin: () => void; onLogout: () => void; mob: boolean; setMob: (v: boolean) => void;
+  cfg: SiteConfig;
 }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -218,11 +239,11 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob }: {
       <div className="hidden md:block" style={{ background: "rgba(0,102,255,.9)", backdropFilter: "blur(8px)" }}>
         <div className="max-w-7xl mx-auto px-6 py-1.5 flex justify-between items-center">
           <div className="flex items-center gap-6 text-white" style={{ fontSize: ".75rem", fontFamily: "'Inter',sans-serif", opacity: .9 }}>
-            <span className="flex items-center gap-1.5"><Icon name="Phone" size={11} /> +7 (495) 940-07-03</span>
-            <span className="flex items-center gap-1.5"><Icon name="Mail" size={11} /> info@ao-urst.ru</span>
+            <span className="flex items-center gap-1.5"><Icon name="Phone" size={11} /> {cfg.phone}</span>
+            <span className="flex items-center gap-1.5"><Icon name="Mail" size={11} /> {cfg.email}</span>
           </div>
           <span className="text-white flex items-center gap-1.5" style={{ fontSize: ".75rem", fontFamily: "'Inter',sans-serif", opacity: .7 }}>
-            <Icon name="Clock" size={11} /> Пн–Пт, 9:00–18:00
+            <Icon name="Clock" size={11} /> {cfg.schedule}
           </span>
         </div>
       </div>
@@ -237,7 +258,7 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob }: {
               alt="АО УРСТ" style={{ height: 34, width: "auto", display: "block" }} />
           </div>
           <div className="leading-tight">
-            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: ".95rem", color: "#fff", letterSpacing: "-.01em" }}>АО УРСТ</div>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: ".95rem", color: "#fff", letterSpacing: "-.01em" }}>{cfg.siteName}</div>
             <div style={{ fontSize: ".6rem", color: "rgba(255,255,255,.45)", letterSpacing: ".1em", fontFamily: "'Inter',sans-serif" }}>СТРОИТЕЛЬНАЯ КОМПАНИЯ</div>
           </div>
         </button>
@@ -1666,6 +1687,89 @@ function EditUserModal({ adminUser, onClose, onSave }: { adminUser: AdminUser; o
   );
 }
 
+// ─── Settings Page ────────────────────────────────────────────────────────────
+function SettingsPage({ cfg, onSave, onBack }: { cfg: SiteConfig; onSave: (c: SiteConfig) => void; onBack: () => void }) {
+  const [form, setForm] = useState<SiteConfig>({ ...cfg });
+  const [saved, setSaved] = useState(false);
+
+  const set = (k: keyof SiteConfig, v: string) => { setForm(p => ({ ...p, [k]: v })); setSaved(false); };
+
+  const handle = () => { onSave(form); setSaved(true); };
+
+  const Field = ({ label, k, placeholder }: { label: string; k: keyof SiteConfig; placeholder?: string }) => (
+    <div>
+      <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>{label}</label>
+      <input className="field" value={form[k]} onChange={e => set(k, e.target.value)} placeholder={placeholder} />
+    </div>
+  );
+
+  return (
+    <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
+      <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-4">
+          <button onClick={onBack} className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.6)" }}>
+            <Icon name="ArrowLeft" size={18} />
+          </button>
+          <div>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", letterSpacing: "-.02em" }}>Настройки сайта</div>
+            <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.4)", marginTop: 2 }}>Хедер, футер и контактные данные</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+        {/* Основное */}
+        <div className="bg-white rounded-2xl p-6" style={{ border: "1px solid #E4E8F0" }}>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 18, letterSpacing: ".04em", textTransform: "uppercase" }}>
+            Основное
+          </div>
+          <div className="space-y-4">
+            <Field label="Наименование сайта" k="siteName" placeholder="АО УРСТ" />
+          </div>
+        </div>
+
+        {/* Хедер */}
+        <div className="bg-white rounded-2xl p-6" style={{ border: "1px solid #E4E8F0" }}>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 18, letterSpacing: ".04em", textTransform: "uppercase" }}>
+            Контактная строка в шапке
+          </div>
+          <div className="space-y-4">
+            <Field label="Номер телефона" k="phone" placeholder="+7 (495) 940-07-03" />
+            <Field label="Email" k="email" placeholder="info@ao-urst.ru" />
+            <Field label="График работы" k="schedule" placeholder="Пн–Пт, 9:00–18:00" />
+          </div>
+        </div>
+
+        {/* Футер */}
+        <div className="bg-white rounded-2xl p-6" style={{ border: "1px solid #E4E8F0" }}>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 18, letterSpacing: ".04em", textTransform: "uppercase" }}>
+            Футер
+          </div>
+          <div className="space-y-4">
+            <Field label="Адрес" k="address" placeholder="г. Москва, ул. Климашкина 22 с 2" />
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Описание компании</label>
+              <textarea className="field" rows={2} value={form.footerDesc} onChange={e => set("footerDesc", e.target.value)} />
+            </div>
+            <Field label="Строка копирайта" k="footerCopyright" placeholder="© 2026 АО «УРСТ». Все права защищены." />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button onClick={handle} className="btn-primary">
+            <Icon name="Save" size={14} /> Сохранить изменения
+          </button>
+          {saved && (
+            <span className="flex items-center gap-1.5 text-sm" style={{ color: "#10b981", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>
+              <Icon name="CheckCircle" size={15} /> Изменения сохранены
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Users Page ───────────────────────────────────────────────────────────────
 function UsersPage({ onBack }: { onBack: () => void }) {
   const [users, setUsers] = useState<AdminUser[]>([
@@ -1777,8 +1881,11 @@ function UsersPage({ onBack }: { onBack: () => void }) {
 }
 
 // ─── Superadmin Dashboard ─────────────────────────────────────────────────────
-function SuperAdminDashboard({ user, onLogout, go }: { user: User; onLogout: () => void; go: (s: Section) => void }) {
-  const [view, setView] = useState<"dashboard" | "users">("dashboard");
+function SuperAdminDashboard({ user, onLogout, go, cfg, onCfgSave }: {
+  user: User; onLogout: () => void; go: (s: Section) => void;
+  cfg: SiteConfig; onCfgSave: (c: SiteConfig) => void;
+}) {
+  const [view, setView] = useState<"dashboard" | "users" | "settings">("dashboard");
   const [addTender, setAddTender] = useState(false);
   const [addUser, setAddUser] = useState(false);
   const [addDoc, setAddDoc] = useState(false);
@@ -1805,10 +1912,11 @@ function SuperAdminDashboard({ user, onLogout, go }: { user: User; onLogout: () 
     { icon: "Plus", label: "Добавить тендер", onClick: () => setAddTender(true) },
     { icon: "UserPlus", label: "Добавить пользователя", onClick: () => setAddUser(true) },
     { icon: "FilePlus", label: "Добавить документ", onClick: () => setAddDoc(true) },
-    { icon: "Settings", label: "Настройки", onClick: () => {} },
+    { icon: "Settings", label: "Настройки", onClick: () => setView("settings") },
   ];
 
   if (view === "users") return <UsersPage onBack={() => setView("dashboard")} />;
+  if (view === "settings") return <SettingsPage cfg={cfg} onSave={onCfgSave} onBack={() => setView("dashboard")} />;
 
   return (
     <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
@@ -1998,7 +2106,7 @@ function ContentAdminDashboard({ user }: { user: User }) {
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
-function Footer({ go }: { go: (s: Section) => void }) {
+function Footer({ go, cfg }: { go: (s: Section) => void; cfg: SiteConfig }) {
   const labels: Record<Section, string> = { home: "Главная", about: "О компании", projects: "Проекты", news: "Новости", tenders: "Тендеры", docs: "Документация", contacts: "Контакты", cabinet: "Личный кабинет" };
   return (
     <footer style={{ background: "#05091A", borderTop: "1px solid rgba(255,255,255,.05)" }}>
@@ -2007,14 +2115,14 @@ function Footer({ go }: { go: (s: Section) => void }) {
           <div className="flex items-center gap-3 mb-4">
             <div style={{ borderRadius: 7, overflow: "hidden", boxShadow: "0 4px 10px rgba(0,102,255,.35)" }} className="flex-shrink-0">
               <img src="https://cdn.poehali.dev/projects/232d353a-884c-46d3-ba1a-b2a0e421060f/bucket/f7e42cde-bc9f-49ef-9ea5-01f05ae05665.png"
-                alt="АО УРСТ" style={{ height: 30, width: "auto", display: "block" }} />
+                alt={cfg.siteName} style={{ height: 30, width: "auto", display: "block" }} />
             </div>
             <div>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: ".9rem", color: "#fff" }}>АО УРСТ</div>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: ".9rem", color: "#fff" }}>{cfg.siteName}</div>
               <div style={{ fontSize: ".65rem", color: "rgba(255,255,255,.5)", letterSpacing: ".05em" }}>с 2013 года</div>
             </div>
           </div>
-          <p style={{ fontSize: ".8rem", color: "rgba(255,255,255,.5)", lineHeight: 1.65 }}>Полный цикл строительства от проектирования до сдачи объекта.</p>
+          <p style={{ fontSize: ".8rem", color: "rgba(255,255,255,.5)", lineHeight: 1.65 }}>{cfg.footerDesc}</p>
         </div>
         <div>
           <div style={{ fontSize: ".7rem", fontWeight: 700, letterSpacing: ".1em", color: "rgba(255,255,255,.5)", textTransform: "uppercase", marginBottom: 12, fontFamily: "'Inter',sans-serif" }}>Навигация</div>
@@ -2028,16 +2136,16 @@ function Footer({ go }: { go: (s: Section) => void }) {
         <div>
           <div style={{ fontSize: ".7rem", fontWeight: 700, letterSpacing: ".1em", color: "rgba(255,255,255,.5)", textTransform: "uppercase", marginBottom: 12, fontFamily: "'Inter',sans-serif" }}>Контакты</div>
           <div className="space-y-2.5" style={{ fontSize: ".82rem", color: "rgba(255,255,255,.5)" }}>
-            <div className="flex items-center gap-2"><Icon name="Phone" size={11} /> +7 (495) 940-07-03</div>
-            <div className="flex items-center gap-2"><Icon name="Mail" size={11} /> info@ao-urst.ru</div>
-            <div className="flex items-center gap-2"><Icon name="MapPin" size={11} /> г. Москва, ул. Климашкина 22 с 2</div>
+            <div className="flex items-center gap-2"><Icon name="Phone" size={11} /> {cfg.phone}</div>
+            <div className="flex items-center gap-2"><Icon name="Mail" size={11} /> {cfg.email}</div>
+            <div className="flex items-center gap-2"><Icon name="MapPin" size={11} /> {cfg.address}</div>
           </div>
         </div>
       </div>
       <div style={{ borderTop: "1px solid rgba(255,255,255,.06)" }} className="py-5 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div style={{ fontSize: ".75rem", color: "rgba(255,255,255,.5)", fontFamily: "'Inter',sans-serif" }}>
-            © 2026 АО «УРСТ». Все права защищены.
+            {cfg.footerCopyright}
           </div>
           <div className="flex items-center gap-3">
             <span style={{ fontSize: ".7rem", color: "rgba(255,255,255,.5)", fontFamily: "'Inter',sans-serif" }}>Входит в группу</span>
@@ -2059,6 +2167,7 @@ export default function Index() {
   const [user, setUser] = useState<User | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [mob, setMob] = useState(false);
+  const [cfg, setCfg] = useState<SiteConfig>(DEFAULT_CONFIG);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, date: "15 апреля 2026", subject: "Строительный проект", text: "Добрый день! Интересует возможность сотрудничества по строительству объекта в Подмосковье. Прошу предоставить информацию о ваших услугах.", reply: "Добрый день! Спасибо за обращение. Мы готовы рассмотреть ваш проект. Наш менеджер свяжется с вами в течение одного рабочего дня.", replyDate: "16 апреля 2026" },
     { id: 2, date: "10 апреля 2026", subject: "Партнёрство", text: "Здравствуйте, хотели бы обсудить возможность партнёрства в рамках тендера на строительство дороги." },
@@ -2089,8 +2198,8 @@ export default function Index() {
   if (user?.role === "superadmin") {
     return (
       <div>
-        <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} />
-        <SuperAdminDashboard user={user} onLogout={logout} go={go} />
+        <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
+        <SuperAdminDashboard user={user} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg} />
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
       </div>
     );
@@ -2100,7 +2209,7 @@ export default function Index() {
   if (user?.role === "contentadmin") {
     return (
       <div>
-        <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} />
+        <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
         <ContentAdminDashboard user={user} />
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
       </div>
@@ -2109,7 +2218,7 @@ export default function Index() {
 
   return (
     <div>
-      <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} />
+      <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
       <main>
         {section === "home"     && <HomeSection go={go} />}
         {section === "about"    && <AboutSection />}
@@ -2122,7 +2231,7 @@ export default function Index() {
           <UserCabinet user={user} setUser={setUser} messages={messages} tenderApps={tenderApps} go={go} />
         )}
       </main>
-      {section !== "cabinet" && <Footer go={go} />}
+      {section !== "cabinet" && <Footer go={go} cfg={cfg} />}
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
     </div>
   );
