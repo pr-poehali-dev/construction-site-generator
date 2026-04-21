@@ -195,23 +195,19 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob }: {
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-2">
-              {user.role === "user" && (
-                <button onClick={() => go("cabinet")}
-                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all"
-                  style={{ background: active === "cabinet" ? B : "rgba(255,255,255,.08)", color: "#fff", fontSize: ".78rem", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>
-                  <Icon name="User" size={13} /> Личный кабинет
-                </button>
-              )}
-              <div className="hidden md:flex items-center gap-2.5 ml-1">
+              <button
+                onClick={() => user.role === "user" ? go("cabinet") : undefined}
+                className={`hidden md:flex items-center gap-2.5 ml-1 rounded-xl px-2 py-1 transition-all ${user.role === "user" ? "cursor-pointer hover:bg-white/10" : ""}`}
+                style={{ background: active === "cabinet" && user.role === "user" ? "rgba(255,255,255,.12)" : "transparent" }}>
                 <div style={{ background: B, width: 30, height: 30, borderRadius: 7, fontSize: ".8rem", fontFamily: "'Inter',sans-serif", fontWeight: 700 }}
-                  className="flex items-center justify-center text-white">{user.name.charAt(0)}</div>
-                <div>
+                  className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
+                <div className="text-left">
                   <div style={{ color: "#fff", fontSize: ".8rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
-                  <div style={{ fontSize: ".68rem", fontFamily: "'Inter',sans-serif", color: user.role === "superadmin" ? "#f59e0b" : user.role === "contentadmin" ? "#3385FF" : "rgba(255,255,255,.4)" }}>
-                    {user.role === "superadmin" ? "Суперадмин" : user.role === "contentadmin" ? "Контент-админ" : "Пользователь"}
+                  <div style={{ fontSize: ".68rem", fontFamily: "'Inter',sans-serif", color: user.role === "superadmin" ? "#f59e0b" : user.role === "contentadmin" ? "#3385FF" : "rgba(255,255,255,.55)" }}>
+                    {user.role === "superadmin" ? "Суперадмин" : user.role === "contentadmin" ? "Контент-админ" : "Личный кабинет →"}
                   </div>
                 </div>
-              </div>
+              </button>
               <button onClick={onLogout} className="text-gray-400 hover:text-white transition-colors p-1"><Icon name="LogOut" size={15} /></button>
             </div>
           ) : (
@@ -691,19 +687,25 @@ function TenderDocsModal({ tender, onClose }: { tender: typeof TENDERS[0]; onClo
   );
 }
 
-function TenderApplyModal({ tender, user, onClose, onSubmit }: {
+function TenderApplyModal({ tender, user, onClose, onSubmit, goToCabinet }: {
   tender: typeof TENDERS[0];
   user: User;
   onClose: () => void;
   onSubmit: (app: Omit<TenderApp, "id">) => void;
+  goToCabinet: () => void;
 }) {
   const [company, setCompany] = useState(user.company || "");
   const [inn, setInn] = useState("");
   const [fileName, setFileName] = useState("");
   const [done, setDone] = useState(false);
+  const [errors, setErrors] = useState<{ company?: string; inn?: string }>({});
 
   const handleSubmit = () => {
-    if (!company || !inn) return;
+    const newErrors: { company?: string; inn?: string } = {};
+    if (!company.trim()) newErrors.company = "Введите название компании";
+    if (!inn.trim()) newErrors.inn = "Введите ИНН";
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
+    setErrors({});
     onSubmit({
       date: new Date().toLocaleDateString("ru-RU"),
       tenderTitle: tender.title,
@@ -724,10 +726,13 @@ function TenderApplyModal({ tender, user, onClose, onSubmit }: {
           </div>
         </div>
         <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK, marginBottom: 8 }}>Заявка отправлена</h3>
-        <p style={{ fontSize: ".85rem", color: MUT, lineHeight: 1.7, marginBottom: 16 }}>
-          Ожидайте обратной связи от нашего специалиста. Статус заявки вы можете отслеживать в личном кабинете.
+        <p style={{ fontSize: ".85rem", color: MUT, lineHeight: 1.7, marginBottom: 20 }}>
+          Ваша заявка принята. Пожалуйста, отслеживайте её статус и ответ от компании в личном кабинете.
         </p>
-        <button onClick={onClose} className="btn-primary justify-center w-full">Закрыть</button>
+        <button onClick={() => { onClose(); goToCabinet(); }} className="btn-primary justify-center w-full mb-3">
+          <Icon name="User" size={14} /> Перейти в личный кабинет
+        </button>
+        <button onClick={onClose} className="w-full text-sm" style={{ color: MUT }}>Закрыть</button>
       </div>
     </div>
   );
@@ -750,11 +755,15 @@ function TenderApplyModal({ tender, user, onClose, onSubmit }: {
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Название компании *</label>
-              <input className="field" value={company} onChange={e => setCompany(e.target.value)} placeholder="ООО Название" />
+              <input className="field" value={company} onChange={e => { setCompany(e.target.value); setErrors(p => ({ ...p, company: undefined })); }}
+                placeholder="ООО Название" style={{ borderColor: errors.company ? "#ef4444" : undefined }} />
+              {errors.company && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.company}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>ИНН *</label>
-              <input className="field" value={inn} onChange={e => setInn(e.target.value)} placeholder="7700000000" />
+              <input className="field" value={inn} onChange={e => { setInn(e.target.value); setErrors(p => ({ ...p, inn: undefined })); }}
+                placeholder="7700000000" style={{ borderColor: errors.inn ? "#ef4444" : undefined }} />
+              {errors.inn && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.inn}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Коммерческое предложение</label>
@@ -772,8 +781,7 @@ function TenderApplyModal({ tender, user, onClose, onSubmit }: {
                 <div className="flex items-center gap-2"><Icon name="Mail" size={13} style={{ color: MUT }} /> {user.email}</div>
               </div>
             </div>
-            <button onClick={handleSubmit} disabled={!company || !inn} className="btn-primary w-full justify-center"
-              style={{ opacity: (!company || !inn) ? 0.5 : 1 }}>
+            <button onClick={handleSubmit} className="btn-primary w-full justify-center">
               Отправить заявку <Icon name="Send" size={14} />
             </button>
           </div>
@@ -852,7 +860,8 @@ function TendersSection({ user, onAddApp, go }: { user: User | null; onAddApp: (
           tender={applyModal}
           user={user}
           onClose={() => setApplyModal(null)}
-          onSubmit={app => { onAddApp(app); setApplyModal(null); }}
+          onSubmit={app => { onAddApp(app); }}
+          goToCabinet={() => { setApplyModal(null); go("cabinet"); }}
         />
       )}
     </div>
@@ -933,13 +942,25 @@ function ContactsSection({ user, onLogin, onSend }: { user: User | null; onLogin
   const [sent, setSent] = useState(false);
   const [subject, setSubject] = useState("Строительный проект");
   const [msgText, setMsgText] = useState("");
+  const [cName, setCName] = useState(user?.name || "");
+  const [cEmail, setCEmail] = useState(user?.email || "");
+  const [cPhone, setCPhone] = useState(user?.phone || "");
+  const [cCompany, setCCompany] = useState(user?.company || "");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const offices = [
     { city: "Москва (Главный офис)", address: "г. Москва, ул. Климашкина 22 с 2", phone: "+7 (495) 940-07-03", email: "info@ao-urst.ru" },
     { city: "Москва (Офис)", address: "г. Москва, ул. 5-я Магистральная 10", phone: "+7 (495) 374-18-92", email: "office2@ao-urst.ru" },
   ];
 
   const handleSend = () => {
-    onSend(subject, msgText || "Сообщение без текста");
+    const errs: Record<string, string> = {};
+    if (!cName.trim()) errs.name = "Укажите ваше имя";
+    if (!cEmail.trim()) errs.email = "Укажите email";
+    if (!cPhone.trim()) errs.phone = "Укажите телефон";
+    if (!msgText.trim()) errs.text = "Напишите сообщение";
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setErrors({});
+    onSend(subject, msgText);
     setSent(true);
   };
 
@@ -983,21 +1004,27 @@ function ContactsSection({ user, onLogin, onSend }: { user: User | null; onLogin
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Имя</label>
-                    <input className="field" placeholder="Ваше имя" />
+                    <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Имя *</label>
+                    <input className="field" placeholder="Ваше имя" value={cName} onChange={e => { setCName(e.target.value); setErrors(p => ({ ...p, name: "" })); }}
+                      style={{ borderColor: errors.name ? "#ef4444" : undefined }} />
+                    {errors.name && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.name}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Компания</label>
-                    <input className="field" placeholder="Название компании" />
+                    <input className="field" placeholder="Название компании" value={cCompany} onChange={e => setCCompany(e.target.value)} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Email</label>
-                  <input type="email" className="field" placeholder="email@company.ru" />
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Email *</label>
+                  <input type="email" className="field" placeholder="email@company.ru" value={cEmail} onChange={e => { setCEmail(e.target.value); setErrors(p => ({ ...p, email: "" })); }}
+                    style={{ borderColor: errors.email ? "#ef4444" : undefined }} />
+                  {errors.email && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.email}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Телефон</label>
-                  <input className="field" placeholder="+7 (___) ___-__-__" />
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Телефон *</label>
+                  <input className="field" placeholder="+7 (___) ___-__-__" value={cPhone} onChange={e => { setCPhone(e.target.value); setErrors(p => ({ ...p, phone: "" })); }}
+                    style={{ borderColor: errors.phone ? "#ef4444" : undefined }} />
+                  {errors.phone && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.phone}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Тема</label>
@@ -1009,8 +1036,10 @@ function ContactsSection({ user, onLogin, onSend }: { user: User | null; onLogin
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Сообщение</label>
-                  <textarea className="field" rows={4} placeholder="Опишите ваш запрос…" value={msgText} onChange={e => setMsgText(e.target.value)} />
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Сообщение *</label>
+                  <textarea className="field" rows={4} placeholder="Опишите ваш запрос…" value={msgText} onChange={e => { setMsgText(e.target.value); setErrors(p => ({ ...p, text: "" })); }}
+                    style={{ borderColor: errors.text ? "#ef4444" : undefined }} />
+                  {errors.text && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.text}</p>}
                 </div>
                 <button onClick={handleSend} className="btn-primary w-full justify-center">Отправить сообщение <Icon name="Send" size={14} /></button>
               </div>
