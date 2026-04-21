@@ -2238,12 +2238,32 @@ export default function Index() {
     setTenderApps(prev => [...prev, { ...app, id: Date.now() }]);
   };
 
-  // Суперадмин видит только дашборд
+  // Суперадмин — дашборд или публичные разделы
   if (user?.role === "superadmin") {
+    const adminSections: Section[] = ["news", "projects", "tenders"];
+    const isPublicSection = adminSections.includes(section);
     return (
       <div>
         <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
-        <SuperAdminDashboard user={user} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg} />
+        {isPublicSection ? (
+          <main>
+            {/* Кнопка возврата в дашборд */}
+            <div style={{ background: INK, paddingTop: 90 }} className="px-6 py-3">
+              <div className="max-w-7xl mx-auto">
+                <button onClick={() => go("home")} className="flex items-center gap-2 text-sm" style={{ color: "rgba(255,255,255,.55)", fontFamily: "'Inter',sans-serif", fontWeight: 500 }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#fff"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,.55)"}>
+                  <Icon name="ArrowLeft" size={14} /> Вернуться в дашборд
+                </button>
+              </div>
+            </div>
+            {section === "news"     && <NewsSection />}
+            {section === "projects" && <ProjectsSection />}
+            {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} />}
+          </main>
+        ) : (
+          <SuperAdminDashboard user={user} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg} />
+        )}
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
       </div>
     );
