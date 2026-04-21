@@ -1994,14 +1994,15 @@ function SettingsPage({ cfg, onSave, onBack }: { cfg: SiteConfig; onSave: (c: Si
 }
 
 // ─── Users Page ───────────────────────────────────────────────────────────────
-function UsersPage({ onBack }: { onBack: () => void }) {
-  const [users, setUsers] = useState<AdminUser[]>([
-    { id: 1, name: "Иванов Иван Петрович", login: "ivanov", email: "ivanov@ao-urst.ru", phone: "+7 (916) 111-11-11", role: "user", regDate: "10.01.2026" },
-    { id: 2, name: "Петрова Мария Сергеевна", login: "petrova", email: "petrova@ao-urst.ru", phone: "+7 (916) 222-22-22", role: "user", regDate: "15.02.2026" },
-    { id: 3, name: "Сидоров Алексей Юрьевич", login: "sidorov", email: "sidorov@ao-urst.ru", phone: "+7 (916) 333-33-33", role: "contentadmin", regDate: "20.03.2026" },
-    { id: 4, name: "Козлова Анна Дмитриевна", login: "kozlova", email: "kozlova@ao-urst.ru", phone: "+7 (916) 444-44-44", role: "user", regDate: "01.04.2026" },
-    { id: 5, name: "Новиков Дмитрий Игоревич", login: "novikov", email: "novikov@ao-urst.ru", phone: "+7 (916) 555-55-55", role: "user", regDate: "05.04.2026", blocked: true },
-  ]);
+const USERS_INITIAL: AdminUser[] = [
+  { id: 1, name: "Иванов Иван Петрович", login: "ivanov", email: "ivanov@ao-urst.ru", phone: "+7 (916) 111-11-11", role: "user", regDate: "10.01.2026" },
+  { id: 2, name: "Петрова Мария Сергеевна", login: "petrova", email: "petrova@ao-urst.ru", phone: "+7 (916) 222-22-22", role: "user", regDate: "15.02.2026" },
+  { id: 3, name: "Сидоров Алексей Юрьевич", login: "sidorov", email: "sidorov@ao-urst.ru", phone: "+7 (916) 333-33-33", role: "contentadmin", regDate: "20.03.2026" },
+  { id: 4, name: "Козлова Анна Дмитриевна", login: "kozlova", email: "kozlova@ao-urst.ru", phone: "+7 (916) 444-44-44", role: "user", regDate: "01.04.2026" },
+  { id: 5, name: "Новиков Дмитрий Игоревич", login: "novikov", email: "novikov@ao-urst.ru", phone: "+7 (916) 555-55-55", role: "user", regDate: "05.04.2026", blocked: true },
+];
+
+function UsersPage({ onBack, users, setUsers }: { onBack: () => void; users: AdminUser[]; setUsers: React.Dispatch<React.SetStateAction<AdminUser[]>> }) {
   const [addModal, setAddModal] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -2258,6 +2259,7 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
   initialView?: "dashboard" | "cabinet"; onViewChange?: () => void;
 }) {
   const [view, setView] = useState<"dashboard" | "users" | "settings" | "cabinet">(initialView || "dashboard");
+  const [users, setUsers] = useState<AdminUser[]>(USERS_INITIAL);
 
   useEffect(() => {
     if (initialView && initialView !== "dashboard") {
@@ -2273,7 +2275,7 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
     { icon: "Newspaper", label: "Новости за неделю", value: 3, sub: "Всего: 12", color: "#0066FF", onClick: () => go("news") },
     { icon: "HardHat", label: "Проекты", value: 8, sub: "+2 за месяц", color: "#8b5cf6", onClick: () => go("projects") },
     { icon: "FileText", label: "Тендеры", value: 5, sub: "+1 за неделю", color: "#f59e0b", onClick: () => go("tenders") },
-    { icon: "Users", label: "Пользователи", value: 45, sub: "+5 за неделю", color: "#10b981", onClick: () => setView("users") },
+    { icon: "Users", label: "Пользователи", value: users.length, sub: `Всего: ${users.length}`, color: "#10b981", onClick: () => setView("users") },
   ];
 
   const recentNews = [
@@ -2281,11 +2283,14 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
     { title: "Получен сертификат ISO 9001", date: "10.04.2026", draft: false },
     { title: "Новый проект метро", date: "—", draft: true },
   ];
-  const recentUsers = [
-    { name: "Иванов И.", when: "сегодня" },
-    { name: "Петров П.", when: "вчера" },
-    { name: "Сидорова А.", when: "2 дня назад" },
-  ];
+
+  const recentUsers = [...users]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 5)
+    .map(u => {
+      const shortName = u.name.split(" ").map((p, i) => i === 0 ? p : p.charAt(0) + ".").join(" ");
+      return { name: shortName, when: u.regDate, role: u.role };
+    });
 
   const actions = [
     { icon: "Plus", label: "Добавить тендер", onClick: () => setAddTender(true) },
@@ -2294,7 +2299,7 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
     { icon: "Settings", label: "Настройки", onClick: () => setView("settings") },
   ];
 
-  if (view === "users") return <UsersPage onBack={() => setView("dashboard")} />;
+  if (view === "users") return <UsersPage onBack={() => setView("dashboard")} users={users} setUsers={setUsers} />;
   if (view === "settings") return <SettingsPage cfg={cfg} onSave={onCfgSave} onBack={() => setView("dashboard")} />;
   if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} onLogout={onLogout} roleLabel="Суперадминистратор" />;
 
@@ -2358,13 +2363,15 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
             </div>
           </div>
           <div className="bg-white rounded-2xl p-5" style={{ border: "1px solid #E4E8F0" }}>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 14, letterSpacing: ".04em", textTransform: "uppercase" }}>Последние пользователи</div>
+            <div className="flex items-center justify-between mb-3">
+              <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, letterSpacing: ".04em", textTransform: "uppercase" }}>Последние пользователи</div>
+              <button onClick={() => setView("users")} style={{ fontSize: ".72rem", color: B, fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>Все →</button>
+            </div>
             <div className="space-y-2.5">
               {recentUsers.map((u, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: B + "18", flexShrink: 0 }} className="flex items-center justify-center">
-                    <Icon name="User" size={14} style={{ color: B }} />
-                  </div>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: ROLE_COLORS[u.role] + "18", flexShrink: 0, fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".78rem", color: ROLE_COLORS[u.role] }}
+                    className="flex items-center justify-center">{u.name.charAt(0)}</div>
                   <span style={{ fontSize: ".85rem", color: INK, flex: 1 }}>{u.name}</span>
                   <span style={{ fontSize: ".72rem", color: MUT }}>{u.when}</span>
                 </div>
@@ -2390,7 +2397,7 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
       </div>
 
       {addTender && <AddTenderModal onClose={() => setAddTender(false)} onAdd={() => {}} />}
-      {addUser && <AddUserModal onClose={() => setAddUser(false)} onAdd={() => {}} />}
+      {addUser && <AddUserModal onClose={() => setAddUser(false)} onAdd={u => setUsers(p => [...p, u])} />}
       {addDoc && <AddDocModal onClose={() => setAddDoc(false)} />}
     </div>
   );
