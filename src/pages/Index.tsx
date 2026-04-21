@@ -505,7 +505,7 @@ function HomeSection({ go }: { go: (s: Section) => void }) {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {NEWS.slice(0, 3).map((n, idx) => (
+            {NEWS_INITIAL.slice(0, 3).map((n, idx) => (
               <div key={n.id} onClick={() => go("news")} className="card-lift bg-white rounded-2xl overflow-hidden group cursor-pointer"
                 style={{ border: "1px solid #E4E8F0" }}>
                 <div style={{ height: 4, background: idx === 0 ? B : "#E4E8F0" }} />
