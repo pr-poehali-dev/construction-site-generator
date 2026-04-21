@@ -323,15 +323,24 @@ function Header({ active, go, user, onLogin, onLogout, mob, setMob, cfg }: {
 }
 
 // ─── Admin back bar ───────────────────────────────────────────────────────────
-function AdminBackBar({ go }: { go: (s: Section) => void }) {
+function AdminBackBar({ go, user, onCabinet }: { go: (s: Section) => void; user: User; onCabinet: () => void }) {
+  const accentColor = user.role === "superadmin" ? "#f59e0b" : "#3385FF";
   return (
-    <div style={{ background: INK, paddingTop: 90 }} className="px-6 pt-2 pb-0">
-      <div className="max-w-7xl mx-auto">
-        <button onClick={() => go("home")} className="flex items-center gap-1.5 py-2 text-sm transition-colors"
+    <div style={{ background: INK }} className="px-6 py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <button onClick={() => go("home")} className="flex items-center gap-1.5 text-sm transition-colors"
           style={{ color: "rgba(255,255,255,.5)", fontFamily: "'Inter',sans-serif", fontWeight: 500 }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#fff"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,.5)"}>
           <Icon name="ArrowLeft" size={13} /> Вернуться в дашборд
+        </button>
+        <button onClick={onCabinet} className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition-all hover:bg-white/10">
+          <div style={{ background: accentColor, width: 28, height: 28, borderRadius: 7, fontSize: ".8rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
+            className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
+          <div className="hidden md:block text-left">
+            <div style={{ color: "#fff", fontSize: ".78rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
+            <div style={{ fontSize: ".65rem", color: accentColor, fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
+          </div>
         </button>
       </div>
     </div>
@@ -1885,7 +1894,7 @@ function SettingsPage({ cfg, onSave, onBack }: { cfg: SiteConfig; onSave: (c: Si
   );
 
   return (
-    <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
+    <div style={{ background: "#F7F8FC", minHeight: "100vh" }}>
       <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <button onClick={onBack} className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.6)" }}>
@@ -1997,7 +2006,7 @@ function UsersPage({ onBack }: { onBack: () => void }) {
   const deleteUser = (id: number) => { setUsers(p => p.filter(u => u.id !== id)); setDeleteId(null); };
 
   return (
-    <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
+    <div style={{ background: "#F7F8FC", minHeight: "100vh" }}>
       <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <button onClick={onBack} className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.6)" }}>
@@ -2122,7 +2131,7 @@ function AdminCabinet({ user, setUser, onBack, roleLabel }: {
   };
 
   return (
-    <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
+    <div style={{ background: "#F7F8FC", minHeight: "100vh" }}>
       {/* Top bar */}
       <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center gap-4">
@@ -2235,11 +2244,19 @@ function AdminCabinet({ user, setUser, onBack, roleLabel }: {
 }
 
 // ─── Superadmin Dashboard ─────────────────────────────────────────────────────
-function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave }: {
+function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, initialView, onViewChange }: {
   user: User; setUser: (u: User) => void; onLogout: () => void; go: (s: Section) => void;
   cfg: SiteConfig; onCfgSave: (c: SiteConfig) => void;
+  initialView?: "dashboard" | "cabinet"; onViewChange?: () => void;
 }) {
-  const [view, setView] = useState<"dashboard" | "users" | "settings" | "cabinet">("dashboard");
+  const [view, setView] = useState<"dashboard" | "users" | "settings" | "cabinet">(initialView || "dashboard");
+
+  useEffect(() => {
+    if (initialView && initialView !== "dashboard") {
+      setView(initialView);
+      onViewChange?.();
+    }
+  }, [initialView]);
   const [addTender, setAddTender] = useState(false);
   const [addUser, setAddUser] = useState(false);
   const [addDoc, setAddDoc] = useState(false);
@@ -2274,22 +2291,26 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave }: {
   if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} roleLabel="Суперадминистратор" />;
 
   return (
-    <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
+    <div style={{ background: "#F7F8FC", minHeight: "100vh" }}>
       <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", letterSpacing: "-.02em" }}>Дашборд АО УРСТ</div>
             <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.4)", marginTop: 2 }}>Панель суперадминистратора</div>
           </div>
-          <button onClick={() => setView("cabinet")} className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all hover:bg-white/10"
-            style={{ background: "transparent" }}>
-            <div style={{ background: "#f59e0b", width: 32, height: 32, borderRadius: 8, fontSize: ".9rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
-              className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
-            <div className="text-left hidden md:block">
-              <div style={{ color: "#fff", fontSize: ".82rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
-              <div style={{ fontSize: ".68rem", color: "#f59e0b", fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
-            </div>
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setView("cabinet")} className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all hover:bg-white/10">
+              <div style={{ background: "#f59e0b", width: 32, height: 32, borderRadius: 8, fontSize: ".9rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
+                className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
+              <div className="text-left hidden md:block">
+                <div style={{ color: "#fff", fontSize: ".82rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
+                <div style={{ fontSize: ".68rem", color: "#f59e0b", fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
+              </div>
+            </button>
+            <button onClick={onLogout} title="Выйти" className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.5)" }}>
+              <Icon name="LogOut" size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2368,8 +2389,18 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave }: {
 }
 
 // ─── ContentAdmin Dashboard ───────────────────────────────────────────────────
-function ContentAdminDashboard({ user, setUser }: { user: User; setUser: (u: User) => void }) {
-  const [view, setView] = useState<"dashboard" | "cabinet">("dashboard");
+function ContentAdminDashboard({ user, setUser, onLogout, initialView, onViewChange }: {
+  user: User; setUser: (u: User) => void; onLogout: () => void;
+  initialView?: "dashboard" | "cabinet"; onViewChange?: () => void;
+}) {
+  const [view, setView] = useState<"dashboard" | "cabinet">(initialView || "dashboard");
+
+  useEffect(() => {
+    if (initialView && initialView !== "dashboard") {
+      setView(initialView);
+      onViewChange?.();
+    }
+  }, [initialView]);
 
   const statCards = [
     { icon: "Newspaper", label: "Новости", value: 12, sub: "+3 за неделю", color: "#0066FF" },
@@ -2389,7 +2420,7 @@ function ContentAdminDashboard({ user, setUser }: { user: User; setUser: (u: Use
   if (view === "cabinet") return <AdminCabinet user={user} setUser={setUser} onBack={() => setView("dashboard")} roleLabel="Контент-администратор" />;
 
   return (
-    <div style={{ background: "#F7F8FC", minHeight: "100vh", paddingTop: 90 }}>
+    <div style={{ background: "#F7F8FC", minHeight: "100vh" }}>
       {/* Top bar */}
       <div style={{ background: INK, borderBottom: "1px solid rgba(255,255,255,.06)" }} className="px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -2397,15 +2428,19 @@ function ContentAdminDashboard({ user, setUser }: { user: User; setUser: (u: Use
             <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", letterSpacing: "-.02em" }}>Дашборд АО УРСТ</div>
             <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.4)", marginTop: 2 }}>Панель контент-администратора</div>
           </div>
-          <button onClick={() => setView("cabinet")} className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all hover:bg-white/10"
-            style={{ background: "transparent" }}>
-            <div style={{ background: "#3385FF", width: 32, height: 32, borderRadius: 8, fontSize: ".9rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
-              className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
-            <div className="text-left hidden md:block">
-              <div style={{ color: "#fff", fontSize: ".82rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
-              <div style={{ fontSize: ".68rem", color: "#3385FF", fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
-            </div>
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setView("cabinet")} className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all hover:bg-white/10">
+              <div style={{ background: "#3385FF", width: 32, height: 32, borderRadius: 8, fontSize: ".9rem", fontFamily: "'Inter',sans-serif", fontWeight: 800 }}
+                className="flex items-center justify-center text-white flex-shrink-0">{user.name.charAt(0)}</div>
+              <div className="text-left hidden md:block">
+                <div style={{ color: "#fff", fontSize: ".82rem", fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>{user.name}</div>
+                <div style={{ fontSize: ".68rem", color: "#3385FF", fontFamily: "'Inter',sans-serif" }}>Личный кабинет →</div>
+              </div>
+            </button>
+            <button onClick={onLogout} title="Выйти" className="p-2 rounded-xl hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,.5)" }}>
+              <Icon name="LogOut" size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2538,6 +2573,7 @@ export default function Index() {
   const [showLogin, setShowLogin] = useState(false);
   const [mob, setMob] = useState(false);
   const [cfg, setCfg] = useState<SiteConfig>(DEFAULT_CONFIG);
+  const [adminInitialView, setAdminInitialView] = useState<"dashboard" | "cabinet">("dashboard");
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, date: "15 апреля 2026", subject: "Строительный проект", text: "Добрый день! Интересует возможность сотрудничества по строительству объекта в Подмосковье. Прошу предоставить информацию о ваших услугах.", reply: "Добрый день! Спасибо за обращение. Мы готовы рассмотреть ваш проект. Наш менеджер свяжется с вами в течение одного рабочего дня.", replyDate: "16 апреля 2026" },
     { id: 2, date: "10 апреля 2026", subject: "Партнёрство", text: "Здравствуйте, хотели бы обсудить возможность партнёрства в рамках тендера на строительство дороги." },
@@ -2568,19 +2604,20 @@ export default function Index() {
   if (user?.role === "superadmin") {
     const adminSections: Section[] = ["news", "projects", "tenders"];
     const isPublicSection = adminSections.includes(section);
+    const goToCabinet = () => { setAdminInitialView("cabinet"); go("home"); };
+    const superAdminBar = <AdminBackBar go={go} user={user} onCabinet={goToCabinet} />;
     return (
       <div>
-        <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
         {isPublicSection ? (
           <main>
-            {section === "news"     && <NewsSection adminBar={<AdminBackBar go={go} />} />}
-            {section === "projects" && <ProjectsSection adminBar={<AdminBackBar go={go} />} />}
-            {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} isAdmin adminBar={<AdminBackBar go={go} />} />}
+            {section === "news"     && <NewsSection adminBar={superAdminBar} />}
+            {section === "projects" && <ProjectsSection adminBar={superAdminBar} />}
+            {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} isAdmin adminBar={superAdminBar} />}
           </main>
         ) : (
-          <SuperAdminDashboard user={user} setUser={setUser as (u: User) => void} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg} />
+          <SuperAdminDashboard user={user} setUser={setUser as (u: User) => void} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg}
+            initialView={adminInitialView} onViewChange={() => setAdminInitialView("dashboard")} />
         )}
-        {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
       </div>
     );
   }
@@ -2589,9 +2626,8 @@ export default function Index() {
   if (user?.role === "contentadmin") {
     return (
       <div>
-        <Header active={section} go={go} user={user} onLogin={() => setShowLogin(true)} onLogout={logout} mob={mob} setMob={setMob} cfg={cfg} />
-        <ContentAdminDashboard user={user} setUser={setUser as (u: User) => void} />
-        {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={u => { setUser(u); setShowLogin(false); }} />}
+        <ContentAdminDashboard user={user} setUser={setUser as (u: User) => void} onLogout={logout}
+          initialView={adminInitialView} onViewChange={() => setAdminInitialView("dashboard")} />
       </div>
     );
   }
