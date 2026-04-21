@@ -45,7 +45,7 @@ const NEWS_INITIAL: NewsItem[] = [
   { id: 3, date: "2 апреля 2026", category: "Тендеры", title: "Победа в государственном тендере на строительство дороги", text: "Наша компания одержала победу в конкурсе на возведение участка автомагистрали. Стоимость контракта — 2.1 млрд рублей.", full: "АО «УРСТ» одержало победу в открытом государственном конкурсе на строительство участка автомагистрали протяжённостью 12.4 км в Подмосковье. Стоимость контракта составила 2.1 млрд рублей.\n\nВ рамках проекта планируется возведение двухполосного шоссе с расширением до четырёх полос, строительство двух транспортных развязок, двух путепроводов и системы ливневой канализации. Дорога свяжет два крупных жилых массива и снизит транспортную нагрузку на существующие артерии.\n\nСрок выполнения работ — 24 месяца с момента подписания контракта. Проектная документация уже разработана и прошла государственную экспертизу." },
   { id: 4, date: "25 марта 2026", category: "Компания", title: "Открытие нового регионального офиса в Москве", text: "В рамках стратегии расширения географии присутствия открылся наш новый офис в Москве по адресу ул. 5-я Магистральная, 10.", full: "В марте 2026 года АО «УРСТ» открыло новый офис в Москве по адресу ул. 5-я Магистральная, 10. Расширение географии присутствия продиктовано ростом портфеля проектов в столичном регионе.\n\nВ новом офисе разместятся проектный отдел, отдел по работе с заказчиками и технический надзор. Площадь офиса составляет 480 кв. м, здесь будет работать более 60 сотрудников.\n\nОткрытие нового офиса позволит компании оперативнее взаимодействовать с заказчиками и партнёрами, а также усилить присутствие в Московском регионе, который является ключевым для стратегии развития АО «УРСТ» на ближайшие пять лет." },
 ];
-const TENDERS = [
+const TENDERS_INITIAL = [
   { id: 1, title: "Строительство тоннельного участка метро", deadline: "15 мая 2026", budget: "от 4.5 млрд ₽", type: "Открытый конкурс", status: "active" },
   { id: 2, title: "Реконструкция инженерных сетей", deadline: "28 мая 2026", budget: "от 45 млн ₽", type: "Запрос котировок", status: "active" },
   { id: 3, title: "Строительство автомобильной дороги II категории", deadline: "5 июня 2026", budget: "от 780 млн ₽", type: "Открытый конкурс", status: "active" },
@@ -716,8 +716,8 @@ function ProjectsSection({ adminBar, projects: projectsProp, setProjects, isAdmi
             <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK, marginBottom: 8 }}>Удалить проект?</h3>
             <p style={{ fontSize: ".85rem", color: MUT, marginBottom: 20 }}>Это действие нельзя отменить.</p>
             <div className="flex gap-3">
-              <button onClick={() => handleDelete(deleteId)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white" style={{ background: "#ef4444", fontFamily: "'Inter',sans-serif" }}>Удалить</button>
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm btn-outline">Отмена</button>
+              <button onClick={() => handleDelete(deleteId)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center" style={{ background: "#ef4444", fontFamily: "'Inter',sans-serif" }}>Удалить</button>
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm btn-outline flex items-center justify-center">Отмена</button>
             </div>
           </div>
         </div>
@@ -1042,8 +1042,8 @@ function NewsSection({ adminBar, news: newsProp, setNews, isAdmin }: {
             <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK, marginBottom: 8 }}>Удалить новость?</h3>
             <p style={{ fontSize: ".85rem", color: MUT, marginBottom: 20 }}>Это действие нельзя отменить.</p>
             <div className="flex gap-3">
-              <button onClick={() => handleDelete(deleteId)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white" style={{ background: "#ef4444", fontFamily: "'Inter',sans-serif" }}>Удалить</button>
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm btn-outline">Отмена</button>
+              <button onClick={() => handleDelete(deleteId)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center" style={{ background: "#ef4444", fontFamily: "'Inter',sans-serif" }}>Удалить</button>
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm btn-outline flex items-center justify-center">Отмена</button>
             </div>
           </div>
         </div>
@@ -1288,12 +1288,15 @@ function EditTenderModal({ tender, onClose, onSave }: { tender: TenderItem; onCl
   );
 }
 
-function TendersSection({ user, onAddApp, go, isAdmin, adminBar }: {
+function TendersSection({ user, onAddApp, go, isAdmin, adminBar, tenders: tendersProp, setTenders: setTendersProp }: {
   user: User | null; onAddApp: (app: Omit<TenderApp, "id">) => void;
   go: (s: Section) => void; isAdmin?: boolean; adminBar?: React.ReactNode;
+  tenders?: TenderItem[]; setTenders?: React.Dispatch<React.SetStateAction<TenderItem[]>>;
 }) {
   const [tab, setTab] = useState<"active" | "closed">("active");
-  const [tenders, setTenders] = useState<TenderItem[]>(TENDERS);
+  const [localTenders, setLocalTenders] = useState<TenderItem[]>(tendersProp ?? TENDERS_INITIAL);
+  const tenders = tendersProp ?? localTenders;
+  const setTenders = setTendersProp ?? setLocalTenders;
   const [docsModal, setDocsModal] = useState<TenderItem | null>(null);
   const [applyModal, setApplyModal] = useState<TenderItem | null>(null);
   const [editModal, setEditModal] = useState<TenderItem | null>(null);
@@ -1400,10 +1403,10 @@ function TendersSection({ user, onAddApp, go, isAdmin, adminBar }: {
             <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK, marginBottom: 8 }}>Удалить тендер?</h3>
             <p style={{ fontSize: ".85rem", color: MUT, marginBottom: 20 }}>Это действие нельзя отменить.</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center"
                 style={{ background: "#F7F8FC", border: "1.5px solid #E4E8F0", color: INK, fontFamily: "'Inter',sans-serif" }}>Отмена</button>
               <button onClick={() => { setTenders(p => p.filter(t => t.id !== deleteId)); setDeleteId(null); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center"
                 style={{ background: "#ef4444", fontFamily: "'Inter',sans-serif" }}>Удалить</button>
             </div>
           </div>
@@ -1976,13 +1979,18 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (u: Admi
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const [phone, setPhone] = useState("");
+
   const handle = () => {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = "Введите ФИО";
     if (!login.trim()) errs.login = "Введите логин";
+    else if (!/^[a-zA-Z0-9_.-]+$/.test(login)) errs.login = "Логин должен содержать только латинские буквы, цифры и _ . -";
+    if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) errs.email = "Введите корректный email (пример: user@mail.ru)";
+    if (phone && !/^(\+7|8)?[\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/.test(phone)) errs.phone = "Введите корректный номер телефона";
     if (!pw.trim()) errs.pw = "Введите пароль";
     if (Object.keys(errs).length) { setErrors(errs); return; }
-    onAdd({ id: Date.now(), name, login, email: email || login + "@ao-urst.ru", phone: "—", role: "user", regDate: new Date().toLocaleDateString("ru-RU") });
+    onAdd({ id: Date.now(), name, login, email: email || login + "@ao-urst.ru", phone: phone || "—", role: "user", regDate: new Date().toLocaleDateString("ru-RU") });
     onClose();
   };
 
@@ -2011,7 +2019,15 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (u: Admi
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Email</label>
-              <input type="email" className="field" value={email} onChange={e => setEmail(e.target.value)} placeholder="ivanov@ao-urst.ru" />
+              <input type="email" className="field" value={email} onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: "" })); }} placeholder="ivanov@ao-urst.ru"
+                style={{ borderColor: errors.email ? "#ef4444" : undefined }} />
+              {errors.email && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.email}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Телефон</label>
+              <input className="field" value={phone} onChange={e => { setPhone(e.target.value); setErrors(p => ({ ...p, phone: "" })); }} placeholder="+7 (___) ___-__-__"
+                style={{ borderColor: errors.phone ? "#ef4444" : undefined }} />
+              {errors.phone && <p style={{ color: "#ef4444", fontSize: ".75rem", marginTop: 4 }}>{errors.phone}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: MUT, fontFamily: "'Inter',sans-serif" }}>Пароль *</label>
@@ -2383,9 +2399,9 @@ function UsersPage({ onBack, users, setUsers }: { onBack: () => void; users: Adm
             <h3 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: "1rem", color: INK, marginBottom: 8 }}>Удалить пользователя?</h3>
             <p style={{ fontSize: ".85rem", color: MUT, marginBottom: 20 }}>Это действие нельзя отменить.</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center"
                 style={{ background: "#F7F8FC", border: "1.5px solid #E4E8F0", color: INK, fontFamily: "'Inter',sans-serif" }}>Отмена</button>
-              <button onClick={() => deleteUser(deleteId)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+              <button onClick={() => deleteUser(deleteId)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center"
                 style={{ background: "#ef4444", fontFamily: "'Inter',sans-serif" }}>Удалить</button>
             </div>
           </div>
@@ -2547,11 +2563,13 @@ function AdminCabinet({ user, setUser, onBack, onLogout, roleLabel }: {
 }
 
 // ─── Superadmin Dashboard ─────────────────────────────────────────────────────
-function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, initialView, onViewChange, sharedNews, setSharedNews }: {
+function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, initialView, onViewChange, sharedNews, setSharedNews, sharedProjects, sharedTenders, setSharedTenders }: {
   user: User; setUser: (u: User) => void; onLogout: () => void; go: (s: Section) => void;
   cfg: SiteConfig; onCfgSave: (c: SiteConfig) => void;
   initialView?: "dashboard" | "cabinet"; onViewChange?: () => void;
   sharedNews?: NewsItem[]; setSharedNews?: React.Dispatch<React.SetStateAction<NewsItem[]>>;
+  sharedProjects?: ProjectItem[];
+  sharedTenders?: TenderItem[]; setSharedTenders?: React.Dispatch<React.SetStateAction<TenderItem[]>>;
 }) {
   const [view, setView] = useState<"dashboard" | "users" | "settings" | "cabinet">(initialView || "dashboard");
   const [users, setUsers] = useState<AdminUser[]>(USERS_INITIAL);
@@ -2577,10 +2595,11 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
   const publishedNews = news.filter(n => !n.draft);
   const draftNews = news.filter(n => n.draft);
 
+  const activeTendersCount = (sharedTenders ?? TENDERS_INITIAL).filter(t => t.status === "active").length;
   const statCards = [
     { icon: "Newspaper", label: "Новости", value: publishedNews.length, sub: `Черновиков: ${draftNews.length}`, color: "#0066FF", onClick: () => go("news") },
-    { icon: "HardHat", label: "Проекты", value: 8, sub: "+2 за месяц", color: "#8b5cf6", onClick: () => go("projects") },
-    { icon: "FileText", label: "Тендеры", value: 5, sub: "+1 за неделю", color: "#f59e0b", onClick: () => go("tenders") },
+    { icon: "HardHat", label: "Проекты", value: (sharedProjects ?? PROJECTS_INITIAL).length, sub: `Всего: ${(sharedProjects ?? PROJECTS_INITIAL).length}`, color: "#8b5cf6", onClick: () => go("projects") },
+    { icon: "FileText", label: "Тендеры", value: activeTendersCount, sub: `Активных: ${activeTendersCount}`, color: "#f59e0b", onClick: () => go("tenders") },
     { icon: "Users", label: "Пользователи", value: users.length, sub: `Всего: ${users.length}`, color: "#10b981", onClick: () => setView("users") },
   ];
 
@@ -2598,10 +2617,10 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
     });
 
   const actions = [
-    { icon: "Plus", label: "Добавить тендер", onClick: () => setAddTender(true) },
-    { icon: "UserPlus", label: "Добавить пользователя", onClick: () => setAddUser(true) },
-    { icon: "FilePlus", label: "Добавить документ", onClick: () => setAddDoc(true) },
-    { icon: "Settings", label: "Настройки", onClick: () => setView("settings") },
+    { icon: "FileText", label: "Добавить тендер", onClick: () => setAddTender(true), color: "#f59e0b" },
+    { icon: "UserPlus", label: "Добавить пользователя", onClick: () => setAddUser(true), color: "#10b981" },
+    { icon: "FilePlus", label: "Добавить документ", onClick: () => setAddDoc(true), color: "#0066FF" },
+    { icon: "Settings", label: "Настройки", onClick: () => setView("settings"), color: "#6b7280" },
   ];
 
   if (view === "users") return <UsersPage onBack={() => setView("dashboard")} users={users} setUsers={setUsers} />;
@@ -2693,10 +2712,8 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
           <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: ".88rem", color: INK, marginBottom: 14, letterSpacing: ".04em", textTransform: "uppercase" }}>Быстрые действия</div>
           <div className="flex flex-wrap gap-3">
             {actions.map((a, i) => (
-              <button key={i} onClick={a.onClick} className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all"
-                style={{ background: "#F7F8FC", border: "1.5px solid #E4E8F0", fontSize: ".82rem", fontFamily: "'Inter',sans-serif", fontWeight: 600, color: INK }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = B; (e.currentTarget as HTMLElement).style.color = B; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E4E8F0"; (e.currentTarget as HTMLElement).style.color = INK; }}>
+              <button key={i} onClick={a.onClick} className="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all"
+                style={{ background: a.color + "10", border: `1.5px solid ${a.color}30`, fontSize: ".82rem", fontFamily: "'Inter',sans-serif", fontWeight: 600, color: a.color }}>
                 <Icon name={a.icon as "Plus"} size={14} /> {a.label}
               </button>
             ))}
@@ -2704,7 +2721,7 @@ function SuperAdminDashboard({ user, setUser, onLogout, go, cfg, onCfgSave, init
         </div>
       </div>
 
-      {addTender && <AddTenderModal onClose={() => setAddTender(false)} onAdd={() => { setToast("Тендер успешно создан!"); }} />}
+      {addTender && <AddTenderModal onClose={() => setAddTender(false)} onAdd={t => { setSharedTenders?.(p => [...p, { id: Date.now(), title: t.title, deadline: t.deadline, budget: t.budget, type: "Открытый конкурс", status: "active" }]); setToast("Тендер успешно создан!"); }} />}
       {addUser && <AddUserModal onClose={() => setAddUser(false)} onAdd={u => { setUsers(p => [...p, u]); setToast("Пользователь добавлен!"); }} />}
       {addDoc && <AddDocModal onClose={() => setAddDoc(false)} onAdd={() => setToast("Документ опубликован!")} />}
       {toast && <Toast message={toast} onClose={() => setToast("")} />}
@@ -2895,6 +2912,7 @@ export default function Index() {
   const [adminInitialView, setAdminInitialView] = useState<"dashboard" | "cabinet">("dashboard");
   const [news, setNews] = useState<NewsItem[]>(NEWS_INITIAL);
   const [projects, setProjects] = useState<ProjectItem[]>(PROJECTS_INITIAL);
+  const [tenders, setTenders] = useState<TenderItem[]>(TENDERS_INITIAL);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, date: "15 апреля 2026", subject: "Строительный проект", text: "Добрый день! Интересует возможность сотрудничества по строительству объекта в Подмосковье. Прошу предоставить информацию о ваших услугах.", reply: "Добрый день! Спасибо за обращение. Мы готовы рассмотреть ваш проект. Наш менеджер свяжется с вами в течение одного рабочего дня.", replyDate: "16 апреля 2026" },
     { id: 2, date: "10 апреля 2026", subject: "Партнёрство", text: "Здравствуйте, хотели бы обсудить возможность партнёрства в рамках тендера на строительство дороги." },
@@ -2933,12 +2951,13 @@ export default function Index() {
           <main>
             {section === "news"     && <NewsSection adminBar={superAdminBar} news={news} />}
             {section === "projects" && <ProjectsSection adminBar={superAdminBar} projects={projects} />}
-            {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} isAdmin adminBar={superAdminBar} />}
+            {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} isAdmin adminBar={superAdminBar} tenders={tenders} setTenders={setTenders} />}
           </main>
         ) : (
           <SuperAdminDashboard user={user} setUser={setUser as (u: User) => void} onLogout={logout} go={go} cfg={cfg} onCfgSave={setCfg}
             initialView={adminInitialView} onViewChange={() => setAdminInitialView("dashboard")}
-            sharedNews={news} setSharedNews={setNews} />
+            sharedNews={news} setSharedNews={setNews}
+            sharedProjects={projects} sharedTenders={tenders} setSharedTenders={setTenders} />
         )}
       </div>
     );
@@ -2973,7 +2992,7 @@ export default function Index() {
         {section === "about"    && <AboutSection />}
         {section === "projects" && <ProjectsSection projects={projects} />}
         {section === "news"     && <NewsSection news={news} />}
-        {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} />}
+        {section === "tenders"  && <TendersSection user={user} onAddApp={handleAddApp} go={go} tenders={tenders} />}
         {section === "docs"     && <DocsSection user={user} />}
         {section === "contacts" && <ContactsSection user={user} onLogin={() => setShowLogin(true)} onSend={handleSendMessage} />}
         {section === "cabinet"  && user?.role === "user" && (
