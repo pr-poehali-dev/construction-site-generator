@@ -150,7 +150,7 @@ const DEFAULT_CONFIG: SiteConfig = {
 // ─── Privacy Policy Modal ─────────────────────────────────────────────────────
 function PrivacyPolicyModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: "rgba(5,9,26,.75)", backdropFilter: "blur(6px)" }}
+    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background: "rgba(5,9,26,.75)", backdropFilter: "blur(6px)", zIndex: 9999 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: "90vh" }} onClick={e => e.stopPropagation()}>
         <div style={{ background: INK }} className="px-7 py-5 flex justify-between items-center flex-shrink-0">
@@ -287,11 +287,7 @@ function LoginModal({ onClose, onLogin, onRegister }: { onClose: () => void; onL
 
   return (
     <>
-      {showPrivacy && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200 }}>
-          <PrivacyPolicyModal onClose={() => setShowPrivacy(false)} />
-        </div>
-      )}
+      {showPrivacy && <PrivacyPolicyModal onClose={() => setShowPrivacy(false)} />}
       <div className="modal-backdrop animate-fade-in" onClick={onClose}>
         <div className="bg-white w-full max-w-md animate-scale-in"
           style={{ borderRadius: 16, boxShadow: "0 32px 80px rgba(5,9,26,.25)", overflow: "hidden" }}
